@@ -151,6 +151,99 @@ def get_ecal_bad_calib(run_number, lumi_number, event_number, year, dataset):
     # We want events that do NOT have (a vetoed run AND a vetoed LS and a vetoed event number)
     return np.logical_not(np.isin(run_number, runs_to_veto) * np.isin(lumi_number, lumis_to_veto) * np.isin(event_number, events_to_veto))
 
+get_ele_loose_id_sf = {}
+get_ele_loose_effMC = {}
+
+ele_loose_id = {}
+ele_loose_id['2016'] = uproot.open("secondary_inputs/ScaleFactor/2016LegacyReReco_ElectronLoose_Fall17V2.root")
+ele_loose_id['2017'] = uproot.open("secondary_inputs/ScaleFactor/2017_ElectronLoose.root")
+ele_loose_id['2018'] = uproot.open("secondary_inputs/ScaleFactor/2018_ElectronLoose.root")
+
+get_ele_tight_id_sf = {}
+get_ele_tight_effMC = {}
+
+ele_tight_id = {}
+ele_tight_id['2016'] = uproot.open("secondary_inputs/ScaleFactor/2016LegacyReReco_ElectronTight_Fall17V2.root")
+ele_tight_id['2017'] = uproot.open("secondary_inputs/ScaleFactor/2017_ElectronTight.root")
+ele_tight_id['2018'] = uproot.open("secondary_inputs/ScaleFactor/2018_ElectronTight.root")
+
+get_pho_tight_id_sf = {}
+
+pho_tight_id = {}
+pho_tight_id['2016'] = uproot.open("secondary_inputs/ScaleFactor/Fall17V2_2016_Tight_photons.root")
+pho_tight_id['2017'] = uproot.open("secondary_inputs/ScaleFactor/2017_PhotonsTight.root")
+pho_tight_id['2018'] = uproot.open("secondary_inputs/ScaleFactor/2018_PhotonsTight.root")
+
+get_mu_tight_id_sf={}
+get_mu_loose_id_sf={}
+get_mu_tight_id_sf2={}
+get_mu_loose_id_sf2={}
+
+mu_id = {}
+mu_id['2016'] = uproot.open("secondary_inputs/ScaleFactor/2016LegacyReReco_Muon_RunBCDEF_SF_ID.root")
+mu_id['2017'] = uproot.open("secondary_inputs/ScaleFactor/2017_Muon_RunBCDEF_SF_ID.root")
+mu_id['2018'] = uproot.open("secondary_inputs/ScaleFactor/2018_Muon_RunABCD_SF_ID.root")
+
+mu_id2 = {}
+mu_id2['2016'] = uproot.open("secondary_inputs/ScaleFactor/2016LegacyReReco_Muon_RunGH_SF_ID.root")
+
+for year in ['2016', '2017', '2018']:
+    looseEleID = ele_loose_id[year]
+    get_ele_loose_id_sf[year] = lookup_tools.dense_lookup.dense_lookup(looseEleID["EGamma_SF2D"].values, looseEleID["EGamma_SF2D"].edges)
+    get_ele_loose_effMC[year] = lookup_tools.dense_lookup.dense_lookup(looseEleID["EGamma_EffMC2D"].values, looseEleID["EGamma_EffMC2D"].edges)
+
+    tightEleID = ele_tight_id[year]
+    get_ele_tight_id_sf[year] = lookup_tools.dense_lookup.dense_lookup(tightEleID["EGamma_SF2D"].values, tightEleID["EGamma_SF2D"].edges)
+    get_ele_tight_effMC[year] = lookup_tools.dense_lookup.dense_lookup(tightEleID["EGamma_EffMC2D"].values, tightEleID["EGamma_EffMC2D"].edges)
+
+    tightPhoID = pho_tight_id[year]
+    get_pho_tight_id_sf[year] = lookup_tools.dense_lookup.dense_lookup(tightEleID["EGamma_SF2D"].values, tightEleID["EGamma_SF2D"].edges)
+
+    muonID = mu_id[year]
+    if year == '2016':
+        muonID2 = mu_id2[year]
+        get_mu_tight_id_sf[year] = lookup_tools.dense_lookup.dense_lookup(muonID["NUM_TightID_DEN_genTracks_eta_pt"].values, muonID["NUM_TightID_DEN_genTracks_eta_pt"].edges)
+        get_mu_loose_id_sf[year] = lookup_tools.dense_lookup.dense_lookup(muonID["NUM_LooseID_DEN_genTracks_eta_pt"].values, muonID["NUM_LooseID_DEN_genTracks_eta_pt"].edges)
+        get_mu_tight_id_sf2[year] = lookup_tools.dense_lookup.dense_lookup(muonID2["NUM_TightID_DEN_genTracks_eta_pt"].values, muonID2["NUM_TightID_DEN_genTracks_eta_pt"].edges)
+        get_mu_loose_id_sf2[year] = lookup_tools.dense_lookup.dense_lookup(muonID2["NUM_LooseID_DEN_genTracks_eta_pt"].values, muonID2["NUM_LooseID_DEN_genTracks_eta_pt"].edges)
+    elif year == '2017':
+        get_mu_tight_id_sf[year] = lookup_tools.dense_lookup.dense_lookup(muonID["NUM_TightID_DEN_genTracks_pt_abseta"].values, muonID["NUM_TightID_DEN_genTracks_pt_abseta"].edges)
+        get_mu_loose_id_sf[year] = lookup_tools.dense_lookup.dense_lookup(muonID["NUM_LooseID_DEN_genTracks_pt_abseta"].values, muonID["NUM_LooseID_DEN_genTracks_pt_abseta"].edges)
+    elif year == '2018':
+        get_mu_tight_id_sf[year] = lookup_tools.dense_lookup.dense_lookup(muonID["NUM_TightID_DEN_TrackerMuons_pt_abseta"].values, muonID["NUM_TightID_DEN_TrackerMuons_pt_abseta"].edges)
+        get_mu_loose_id_sf[year] = lookup_tools.dense_lookup.dense_lookup(muonID["NUM_LooseID_DEN_TrackerMuons_pt_abseta"].values, muonID["NUM_LooseID_DEN_TrackerMuons_pt_abseta"].edges)
+
+### scale factor = (L(BCDEF)*sf(BCDEF) + L(GH)*sf(GH))/(L(BCDEF)+L(GH)) for 2016 muon ###
+lumi_bcdef = 16.49
+lumi_gh = 19.42
+def get_single_ele_SF(eta, pt, year):
+        return get_ele_tight_id_sf[year](eta, pt)
+
+def get_single_mu_SF(eta, pt, year):
+    if year == 2016:
+        return (lumi_bcdef*get_mu_tight_id_sf[year](eta, pt) + lumi_gh*get_mu_tight_id_sf2[year](eta, pt))/(lumi_bcdef+lumi_gh)
+    else:
+        return get_mu_tight_id_sf[year](abs(eta), pt)
+
+def get_single_pho_SF(eta, pt, year):
+        return get_pho_tight_id_sf[year](eta, pt)
+
+def get_double_ele_SF(eta1, pt1, eta2, pt2, year):
+        w1 = get_ele_tight_id_sf[year](eta1, pt1)*get_ele_tight_effMC[year](eta1, pt1)*get_ele_loose_id_sf[year](eta2, pt2)*get_ele_loose_effMC[year](eta2, pt2)
+        w2 = get_ele_tight_id_sf[year](eta2, pt2)*get_ele_tight_effMC[year](eta2, pt2)*get_ele_loose_id_sf[year](eta1, pt1)*get_ele_loose_effMC[year](eta1, pt1)
+        denom = get_ele_tight_effMC[year](eta1, pt1)*get_ele_loose_effMC[year](eta2, pt2) + get_ele_tight_effMC[year](eta2, pt2)*get_ele_loose_effMC[year](eta1, pt1)
+        return (w1+w2)/denom
+
+def get_double_mu_SF(eta1, pt1, eta2, pt2, year):
+    if year == 2016:
+        w1 = ((lumi_bcdef*get_mu_tight_id_sf[year](eta1, pt1) + lumi_gh*get_mu_tight_id_sf2[year](eta1, pt1))/(lumi_bcdef+lumi_gh))*((lumi_bcdef*get_mu_loose_id_sf[year](eta2, pt2) + lumi_gh*get_mu_loose_id_sf2[year](eta2, pt2))/(lumi_bcdef+lumi_gh))
+        w2 = ((lumi_bcdef*get_mu_tight_id_sf[year](eta2, pt2) + lumi_gh*get_mu_tight_id_sf2[year](eta2, pt2))/(lumi_bcdef+lumi_gh))*((lumi_bcdef*get_mu_loose_id_sf[year](eta1, pt1) + lumi_gh*get_mu_loose_id_sf2[year](eta1, pt1))/(lumi_bcdef+lumi_gh))
+        return (w1+w2)/2.0
+    else:
+        w1 = get_mu_tight_id_sf[year](abs(eta1), pt1)*get_mu_loose_id_sf[year](abs(eta2), pt2)
+        w2 = get_mu_tight_id_sf[year](abs(eta2), pt2)*get_mu_loose_id_sf[year](abs(eta1), pt1)
+        return (w1+w2)/2.0
+
 corrections = {}
 corrections['get_msd_weight']          = get_msd_weight
 corrections['get_ttbar_weight']        = get_ttbar_weight
@@ -162,4 +255,9 @@ corrections['get_met_zmm_trig_weight'] = get_met_zmm_trig_weight
 corrections['get_ele_trig_weight']     = get_ele_trig_weight
 corrections['get_pho_trig_weight']     = get_pho_trig_weight
 corrections['get_ecal_bad_calib']      = get_ecal_bad_calib
+corrections['get_single_ele_SF']       = get_single_ele_SF
+corrections['get_single_mu_SF']        = get_single_mu_SF
+corrections['get_single_pho_SF']       = get_single_pho_SF
+corrections['get_double_ele_SF']       = get_double_ele_SF
+corrections['get_double_mu_SF']        = get_double_mu_SF
 save(corrections, 'secondary_inputs/corrections.coffea')

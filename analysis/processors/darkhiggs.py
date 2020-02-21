@@ -121,16 +121,16 @@ class AnalysisProcessor(processor.ProcessorABC):
             'fj1pt': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("fj1pt","AK15 Leading Jet Pt",[200.0, 250.0, 280.0, 310.0, 340.0, 370.0, 400.0, 430.0, 470.0, 510.0, 550.0, 590.0, 640.0, 690.0, 740.0, 790.0, 840.0, 900.0, 960.0, 1020.0, 1090.0, 1160.0, 1250.0])),
             'fj1eta': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("fj1eta","AK15 Leading Jet Eta",35,-3.5,3.5)),
             'fj1phi': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("fj1phi","AK15 Leading Jet Phi",35,-3.5,3.5)),
-            'njets': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("njets","AK4 Number of Jets",6,0,5)),
-            'ndcsvL': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("ndcsvL","AK4 Number of deepCSV Loose Jets",6,0,5)),
-            'ndflvL': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("ndflvL","AK4 Number of deepFlavor Loose Jets",6,0,5)),
-            'ndcsvM': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("ndcsvM","AK4 Number of deepCSV Medium Jets",6,0,5)),
-            'ndflvM': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("ndflvM","AK4 Number of deepFlavor Medium Jets",6,0,5)),
-            'ndcsvT': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("ndcsvT","AK4 Number of deepCSV Tight Jets",6,0,5)),
-            'ndflvT': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("ndflvT","AK4 Number of deepFlavor Tight Jets",6,0,5)),
-            'nfjtot': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("nfjtot","AK15 Number of Jets",4,0,3)),
-            'nfjgood': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("nfjgood","AK15 Number of Good Jets",4,0,3)),
-            'nfjclean': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("nfjclean","AK15 Number of cleaned Jets",4,0,3)),
+            'njets': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("njets","AK4 Number of Jets",6,-0.5,5.5)),
+            'ndcsvL': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("ndcsvL","AK4 Number of deepCSV Loose Jets",6,-0.5,5.5)),
+            'ndflvL': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("ndflvL","AK4 Number of deepFlavor Loose Jets",6,-0.5,5.5)),
+            'ndcsvM': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("ndcsvM","AK4 Number of deepCSV Medium Jets",6,-0.5,5.5)),
+            'ndflvM': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("ndflvM","AK4 Number of deepFlavor Medium Jets",6,-0.5,5.5)),
+            'ndcsvT': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("ndcsvT","AK4 Number of deepCSV Tight Jets",6,-0.5,5.5)),
+            'ndflvT': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("ndflvT","AK4 Number of deepFlavor Tight Jets",6,-0.5,5.5)),
+            'nfjtot': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("nfjtot","AK15 Number of Jets",4,-0.5,3.5)),
+            'nfjgood': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("nfjgood","AK15 Number of Good Jets",4,-0.5,3.5)),
+            'nfjclean': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("nfjclean","AK15 Number of cleaned Jets",4,-0.5,3.5)),
             'fjmass': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("fjmass","AK15 Jet Mass",30,0,300)),
             'e1pt': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("e1pt","Leading Electron Pt",[30.0, 60.0, 90.0, 120.0, 150.0, 180.0, 210.0, 250.0, 280.0, 310.0, 340.0, 370.0, 400.0, 430.0, 470.0, 510.0, 550.0, 590.0, 640.0, 690.0, 740.0, 790.0, 840.0, 900.0, 960.0, 1020.0, 1090.0, 1160.0, 1250.0])),
             'e1eta': hist.Hist("Events", hist.Cat("dataset", "Primary dataset"), hist.Cat("region", "Region"), hist.Cat("jet_selection", "JetSelection"), hist.Bin("e1eta","Leading Electron Eta",48,-2.4,2.4)),
@@ -201,6 +201,11 @@ class AnalysisProcessor(processor.ProcessorABC):
             get_ele_trig_weight     = self._corrections['get_ele_trig_weight']    
             get_pho_trig_weight     = self._corrections['get_pho_trig_weight']    
             get_ecal_bad_calib      = self._corrections['get_ecal_bad_calib']     
+            get_single_ele_SF       = self._corrections['get_single_ele_SF']
+            get_single_mu_SF        = self._corrections['get_single_mu_SF']
+            get_single_pho_SF       = self._corrections['get_single_pho_SF']
+            get_double_ele_SF       = self._corrections['get_double_ele_SF']
+            get_double_mu_SF        = self._corrections['get_double_mu_SF']
 
             isLooseElectron = self._ids['isLooseElectron'] 
             isTightElectron = self._ids['isTightElectron'] 
@@ -589,6 +594,26 @@ class AnalysisProcessor(processor.ProcessorABC):
                 trig['istwoE'] = 1 - (1-eff1)*(1-eff2)
             trig['isoneA'] = get_pho_trig_weight[self._year](leading_pho.pt.sum())
 
+            ### 
+            # Object ID SFs 
+            ###
+
+            objID = {}
+            if not 'MET' in dataset or 'SingleElectron' in dataset or 'SinglePhoton' in dataset or 'EGamma' in dataset:
+                objID['iszeroL'] = np.ones_like(df['MET_pt'])
+                objID['isoneM'] = get_single_mu_SF(leading_mu.eta.sum(), leading_mu.pt.sum(), self._year)
+                objID['isoneE'] = get_single_ele_SF(leading_e.eta.sum(), leading_e.pt.sum(), self._year)
+                objID['istwoM'] = objID['isoneM']
+                if mu_pairs.i0.content.size>0:
+                    objID['istwoM'] = get_double_mu_SF(mu_pairs[dimu.pt.argmax()].i0.eta.sum(), mu_pairs[dimu.pt.argmax()].i0.pt.sum(), mu_pairs[dimu.pt.argmax()].i1.eta.sum(), mu_pairs[dimu.pt.argmax()].i1.pt.sum(), self._year)
+                objID['istwoE'] = objID['isoneE']
+                if ele_pairs.i0.content.size>0:
+                    objID['istwoE'] = get_double_ele_SF(ele_pairs[diele.pt.argmax()].i0.eta.sum(), ele_pairs[diele.pt.argmax()].i0.pt.sum(), ele_pairs[diele.pt.argmax()].i1.eta.sum(), ele_pairs[diele.pt.argmax()].i1.pt.sum(), self._year)
+                objID['isoneA'] = get_single_pho_SF(leading_pho.eta.sum(), leading_pho.pt.sum(), self._year)
+            else:
+                for k in selected_regions[dataset]:
+                    objID[k] = np.ones_like(df['MET_pt'])
+
             ###
             #Event selection
             ###
@@ -627,6 +652,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                 weights[k].add('passMetFilters',np.prod([met_filters[key] for key in met_filters], axis=0))
                 weights[k].add('trig', trig[k])
                 weights[k].add('pass_trig', pass_trig[k])
+                weights[k].add('objID', objID[k])
 
 
                 selections.add(k+'baggy', (fj_nclean>0)&(fj_clean.pt.max()>160)&(abs(u[k].delta_phi(j_clean)).min()>0.8)&(u[k].pt>250))

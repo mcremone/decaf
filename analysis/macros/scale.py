@@ -132,7 +132,7 @@ def scale(directory):
 
     scale={}
     for dataset in hists['sumw'].keys():
-        scale[dataset]=hists['sumw'][dataset].view(flow=True)#[()][1]
+        scale[dataset]=hists['sumw'][dataset]
     print('Sumw extracted')
 
     for key in hists.keys():

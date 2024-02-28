@@ -1,61 +1,91 @@
 #!/usr/bin/env python
-import lz4.frame as lz4f
-import cloudpickle
-import json
-import pprint
+import logging
 import numpy as np
-import math 
-import awkward
-np.seterr(divide='ignore', invalid='ignore', over='ignore')
-from coffea.arrays import Initialize
-from coffea import hist, processor
+import awkward as ak
+import json
+import copy
+from collections import defaultdict
+from coffea import processor
+import hist
+from coffea.analysis_tools import Weights, PackedSelection
+from coffea.lumi_tools import LumiMask
 from coffea.util import load, save
 from optparse import OptionParser
-from uproot_methods import TVector2Array, TLorentzVectorArray
+from uproot_methods import TVector2Array
 
 class AnalysisProcessor(processor.ProcessorABC):
 
-    lumis = { #Values from https://twiki.cern.ch/twiki/bin/viewauth/CMS/PdmVAnalysisSummaryTable                                                      
-        '2016': 36.31,
-        '2017': 41.53,
-        '2018': 59.74
+    lumis = { 
+        #Values from https://twiki.cern.ch/twiki/bin/view/CMS/LumiRecommendationsRun2                                                      
+        '2016postVFP': 36.31,
+        '2016preVFP': 36.31,
+        '2017': 41.48,
+        '2018': 59.83
     }
 
-    met_filter_flags = {
-     
-        '2016': ['goodVertices',
-                 'globalSuperTightHalo2016Filter',
-                 'HBHENoiseFilter',
-                 'HBHENoiseIsoFilter',
-                 'EcalDeadCellTriggerPrimitiveFilter',
-                 'BadPFMuonFilter'
-             ],
-
-        '2017': ['goodVertices',
-                 'globalSuperTightHalo2016Filter',
-                 'HBHENoiseFilter',
-                 'HBHENoiseIsoFilter',
-                 'EcalDeadCellTriggerPrimitiveFilter',
-                 'BadPFMuonFilter',
-                 'ecalBadCalibFilterV2'
-             ],
-
-        '2018': ['goodVertices',
-                 'globalSuperTightHalo2016Filter',
-                 'HBHENoiseFilter',
-                 'HBHENoiseIsoFilter',
-                 'EcalDeadCellTriggerPrimitiveFilter',
-                 'BadPFMuonFilter',
-                 'ecalBadCalibFilterV2'
-             ]
+    lumiMasks = {
+        '2016postVFP': LumiMask("data/jsons/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt"),
+        '2016preVFP': LumiMask("data/jsons/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt"),
+        '2017': LumiMask("data/jsons/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt"),
+        '2018"': LumiMask("data/jsons/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt"),
     }
+    
+    met_filters = {
+        # https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
+        '2016postVFP': [
+                'goodVertices',
+                'globalSuperTightHalo2016Filter',
+                'HBHENoiseFilter',
+                'HBHENoiseIsoFilter',
+                'EcalDeadCellTriggerPrimitiveFilter',
+                'BadPFMuonFilter',
+                'BadPFMuonDzFilter',
+                'eeBadScFilter'
+                ],
 
+        '2016preVFP': [
+                'goodVertices',
+                'globalSuperTightHalo2016Filter',
+                'HBHENoiseFilter',
+                'HBHENoiseIsoFilter',
+                'EcalDeadCellTriggerPrimitiveFilter',
+                'BadPFMuonFilter',
+                'BadPFMuonDzFilter',
+                'eeBadScFilter'
+                ],
+        
+        '2017': [
+                'goodVertices', 
+                'globalSuperTightHalo2016Filter', 
+                'HBHENoiseFilter', 
+                'HBHENoiseIsoFilter', 
+                'EcalDeadCellTriggerPrimitiveFilter', 
+                'BadPFMuonFilter', 
+                'BadPFMuonDzFilter', 
+                'eeBadScFilter', 
+                'ecalBadCalibFilter'
+                ],
+
+        '2018': [
+                'goodVertices', 
+                'globalSuperTightHalo2016Filter', 
+                'HBHENoiseFilter', 
+                'HBHENoiseIsoFilter', 
+                'EcalDeadCellTriggerPrimitiveFilter', 
+                'BadPFMuonFilter', 
+                'BadPFMuonDzFilter', 
+                'eeBadScFilter', 
+                'ecalBadCalibFilter'
+                ]
+    }
             
     def __init__(self, year, xsec, corrections, ids, common):
 
         self._year = year
         self._lumi = 1000.*float(AnalysisProcessor.lumis[year])
         self._xsec = xsec
+        self._systematics = True
+        self._skipJER = False
 
         self._samples = {
             'sr':('ZJets','WJets','DY','TT','ST','WW','WZ','ZZ','QCD','HToBB','HTobb','MET','mhs'),
@@ -73,7 +103,13 @@ class AnalysisProcessor(processor.ProcessorABC):
         }
 
         self._met_triggers = {
-            '2016': [
+            '2016postVFP': [
+                'PFMETNoMu90_PFMHTNoMu90_IDTight',
+                'PFMETNoMu100_PFMHTNoMu100_IDTight',
+                'PFMETNoMu110_PFMHTNoMu110_IDTight',
+                'PFMETNoMu120_PFMHTNoMu120_IDTight'
+            ],
+            '2016preVFP': [
                 'PFMETNoMu90_PFMHTNoMu90_IDTight',
                 'PFMETNoMu100_PFMHTNoMu100_IDTight',
                 'PFMETNoMu110_PFMHTNoMu110_IDTight',
@@ -90,7 +126,11 @@ class AnalysisProcessor(processor.ProcessorABC):
         }
 
         self._singleelectron_triggers = { #2017 and 2018 from monojet, applying dedicated trigger weights
-            '2016': [
+            '2016postVFP': [
+                'Ele27_WPTight_Gsf',
+                'Ele105_CaloIdVT_GsfTrkIdT'
+            ],
+            '2016preVFP': [
                 'Ele27_WPTight_Gsf',
                 'Ele105_CaloIdVT_GsfTrkIdT'
             ],
@@ -110,186 +150,212 @@ class AnalysisProcessor(processor.ProcessorABC):
         self._ids = ids
         self._common = common
 
-        self._accumulator = processor.dict_accumulator({
-            'sumw': hist.Hist(
-                'sumw', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Bin('sumw', 'Weight value', [0.])
-            ),
-            'cutflow': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                #hist.Bin('cut', 'Cut index', 11, 0, 11),
-                hist.Bin('cut', 'Cut index', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
-            ),
+        ptbins=[30.0, 
+                60.0, 
+                90.0, 
+                120.0, 
+                150.0, 
+                180.0, 
+                210.0, 
+                250.0, 
+                280.0, 
+                310.0, 
+                340.0, 
+                370.0, 
+                400.0, 
+                430.0, 
+                470.0, 
+                510.0, 
+                550.0, 
+                590.0, 
+                640.0, 
+                690.0, 
+                740.0, 
+                790.0, 
+                840.0, 
+                900.0, 
+                960.0, 
+                1020.0, 
+                1090.0, 
+                1160.0, 
+                1250.0]
+
+        self.make_output = lambda: {
+            'sumw': 0.,
             'template': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Cat('systematic', 'Systematic'),
-                hist.Bin('recoil','Hadronic Recoil',[250,310,370,470,590,840,1020,1250,3000]),
-                hist.Bin('fjmass','AK15 Jet Mass', [40,50,60,70,80,90,100,110,120,130,150,160,180,200,220,240,300]),#[0, 30, 60, 80, 120, 300]),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.StrCategory([], name='systematic', growth=True),
+                hist.axis.Variable([250,310,370,470,590,840,1020,1250,3000], name='recoil', label=r'$U$ [GeV]'),
+                hist.axis.Variable([40,50,60,70,80,90,100,110,120,130,150,160,180,200,220,240,300], name='fjmass', label=r'AK15 Jet $m_{sd}$'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'ZHbbvsQCD': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD',15,0,1)
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(15,0,1, name='ZHbbvsQCD', label='ZHbbvsQCD'),
+                hist.storage.Weight(),
             ),
             'mindphirecoil': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Bin('mindphirecoil','Min dPhi(Recoil,AK4s)',30,0,3.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(30,0,3.5, name='mindphirecoil', label='Min dPhi(Recoil,AK4s)'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'minDphirecoil': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Bin('minDphirecoil','Min dPhi(Recoil,AK15s)',30,0,3.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(30,0,3.5, name='minDphirecoil', label='Min dPhi(Recoil,AK15s)'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'CaloMinusPfOverRecoil': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Bin('CaloMinusPfOverRecoil','Calo - Pf / Recoil',35,0,1),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(35,0,1, name='CaloMinusPfOverRecoil', label='Calo - Pf / Recoil'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'met': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Bin('met','MET',30,0,600),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(30,0,600, name='met', label='MET'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'metphi': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Bin('metphi','MET phi',35,-3.5,3.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(35,-3.5,3.5, name='metphi', label='MET phi'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'mindphimet': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Bin('mindphimet','Min dPhi(MET,AK4s)',30,0,3.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(30,0,3.5, name='mindphimet', label='Min dPhi(MET,AK4s)'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'minDphimet': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Bin('minDphimet','Min dPhi(MET,AK15s)',30,0,3.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(30,0,3.5, name='minDphimet', label='Min dPhi(MET,AK15s)'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'j1pt': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Bin('j1pt','AK4 Leading Jet Pt',[30.0, 60.0, 90.0, 120.0, 150.0, 180.0, 210.0, 250.0, 280.0, 310.0, 340.0, 370.0, 400.0, 430.0, 470.0, 510.0, 550.0, 590.0, 640.0, 690.0, 740.0, 790.0, 840.0, 900.0, 960.0, 1020.0, 1090.0, 1160.0, 1250.0]),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Variable(ptbins, name='j1pt', label='AK4 Leading Jet Pt'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'j1eta': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Bin('j1eta','AK4 Leading Jet Eta',35,-3.5,3.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(35,-3.5,3.5, name='j1eta', label='AK4 Leading Jet Eta'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'j1phi': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('j1phi','AK4 Leading Jet Phi',35,-3.5,3.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(35,-3.5,3.5, name='j1phi', label='AK4 Leading Jet Phi'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'fj1pt': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('fj1pt','AK15 Leading SoftDrop Jet Pt',[160.0, 200.0, 250.0, 280.0, 310.0, 340.0, 370.0, 400.0, 430.0, 470.0, 510.0, 550.0, 590.0, 640.0, 690.0, 740.0, 790.0, 840.0, 900.0, 960.0, 1020.0, 1090.0, 1160.0, 1250.0]),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Variable(ptbins, name='fj1pt', label='AK15 Leading SoftDrop Jet Pt'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'fj1eta': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('fj1eta','AK15 Leading SoftDrop Jet Eta',35,-3.5,3.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(35,-3.5,3.5, name='fj1eta', label='AK15 Leading SoftDrop Jet Eta'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'fj1phi': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('fj1phi','AK15 Leading SoftDrop Jet Phi',35,-3.5,3.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(35,-3.5,3.5, name='fj1phi', label='AK15 Leading SoftDrop Jet Phi'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'njets': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('njets','AK4 Number of Jets',6,-0.5,5.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.IntCategory([0, 1, 2, 3, 4, 5, 6], name='njets', label='AK4 Number of Jets'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'ndflvL': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('ndflvL','AK4 Number of deepFlavor Loose Jets',6,-0.5,5.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.IntCategory([0, 1, 2, 3, 4, 5, 6], name='ndflvL', label='AK4 Number of deepFlavor Loose Jets'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'nfjclean': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('nfjclean','AK15 Number of Cleaned Jets',4,-0.5,3.5),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.IntCategory([0, 1, 2, 3, 4], name='nfjclean', label='AK15 Number of Cleaned Jets'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'mT': hist.Hist(
-                'Events',
-                hist.Cat('dataset', 'Dataset'),
-                hist.Cat('region', 'Region'),
-                hist.Bin('mT','Transverse Mass',20,0,600),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(20,0,600, name='mT', label='Transverse Mass'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'l1pt': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('l1pt','Leading Lepton/Photon Pt',[0.0, 30.0, 60.0, 90.0, 120.0, 150.0, 180.0, 210.0, 250.0, 280.0, 310.0, 340.0, 370.0, 400.0, 430.0, 470.0, 510.0, 550.0, 590.0, 640.0, 690.0, 740.0, 790.0, 840.0, 900.0, 960.0, 1020.0, 1090.0, 1160.0, 1250.0]),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Variable(ptbins, name='l1pt', label='Leading Lepton Pt'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'l1eta': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('l1eta','Leading Lepton/Photon Eta',48,-2.4,2.4),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(48,-2.4,2.4, name='l1eta', label='Leading Lepton Eta'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
             'l1phi': hist.Hist(
-                'Events', 
-                hist.Cat('dataset', 'Dataset'), 
-                hist.Cat('region', 'Region'), 
-                hist.Bin('l1phi','Leading Lepton/Photon Phi',64,-3.2,3.2),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(64,-3.2,3.2, name='l1phi', label='Leading Lepton Phi'),
+                hist.axis.Variable([0, self._ZHbbvsQCDwp[self._year], 1], name='ZHbbvsQCD', label='ZHbbvsQCD', flow=False),
+                hist.storage.Weight(),
             ),
-        })
-
-    @property
-    def accumulator(self):
-        return self._accumulator
-
-    @property
-    def columns(self):
-        return self._columns
+    }
 
     def process(self, events):
+        isData = not hasattr(events, "genWeight")
+        if isData:
+            # Nominal JEC are already applied in data
+            return self.process_shift(events, None)
+
+        import cachetools
+        jec_cache = cachetools.Cache(np.inf)
+    
+        nojer = "NOJER" if self._skipJER else ""
+        thekey = f"{self._year}mc{nojer}"
+
+        def add_jec_variables(jets, event_rho):
+            jets["pt_raw"] = (1 - jets.rawFactor)*jets.pt
+            jets["mass_raw"] = (1 - jets.rawFactor)*jets.mass
+            jets["pt_gen"] = ak.values_astype(ak.fill_none(jets.matched_gen.pt, 0), np.float32)
+            jets["event_rho"] = ak.broadcast_arrays(event_rho, jets.pt)[0]
+            return jets
+        
+        jets = jet_factory[thekey].build(add_jec_variables(events.Jet, events.fixedGridRhoFastjetAll), jec_cache)
+        subjets = jet_factory[thekey].build(add_jec_variables(events.AK15PFPuppiSubjet, events.fixedGridRhoFastjetAll), jec_cache)
+        met = met_factory.build(events.MET, jets, {})
+
+        shifts = [({"Jet": jets, "AK15PFPuppiSubjet": subjets, "MET": met}, None)]
+        if self._systematics:
+            shifts.extend([
+                ({"Jet": jets.JES_jes.up, "AK15PFPuppiSubjet": subjets.JES_jes.up, "MET": met.JES_jes.up}, "JESUp"),
+                ({"Jet": jets.JES_jes.down, "AK15PFPuppiSubjet": subjets.JES_jes.down, "MET": met.JES_jes.down}, "JESDown"),
+                ({"Jet": jets, "AK15PFPuppiSubjet": subjets, "MET": met.MET_UnclusteredEnergy.up}, "UESUp"),
+                ({"Jet": jets, "AK15PFPuppiSubjet": subjets, "MET": met.MET_UnclusteredEnergy.down}, "UESDown"),
+            ])
+            if not self._skipJER:
+                shifts.extend([
+                    ({"Jet": jets.JER.up, "AK15PFPuppiSubjet": subjets.JER.up, "MET": met.JER.up}, "JERUp"),
+                    ({"Jet": jets.JER.down, "AK15PFPuppiSubjet": subjets.JER.down, "MET": met.JER.down}, "JERDown"),
+                ])
+        return processor.accumulate(self.process_shift(update(events, collections), name) for collections, name in shifts)
+
+    def process_shift(self, events, shift_name):
 
         dataset = events.metadata['dataset']
 
@@ -299,35 +365,39 @@ class AnalysisProcessor(processor.ProcessorABC):
                 if sample not in dataset: continue
                 selected_regions.append(region)
 
-        isData = 'genWeight' not in events.columns
-        selection = processor.PackedSelection()
-        hout = self.accumulator.identity()
+        isData = not hasattr(events, "genWeight")
+        selection = PackedSelection()
+        weights = Weights(len(events), storeIndividual=True)
+        output = self.make_output()
+        if shift_name is None and not isData:
+            output['sumw'] = ak.sum(events.genWeight)
 
         ###
         #Getting corrections, ids from .coffea files
         ###
 
-        get_msd_corr            = self._corrections['get_msd_corr']
-        get_ttbar_weight        = self._corrections['get_ttbar_weight']
-        get_nnlo_nlo_weight     = self._corrections['get_nnlo_nlo_weight'][self._year]
-        get_nlo_qcd_weight      = self._corrections['get_nlo_qcd_weight'][self._year]
-        get_nlo_ewk_weight      = self._corrections['get_nlo_ewk_weight'][self._year]
-        get_pu_weight           = self._corrections['get_pu_weight'][self._year]          
-        get_met_trig_weight     = self._corrections['get_met_trig_weight'][self._year]    
-        get_met_zmm_trig_weight = self._corrections['get_met_zmm_trig_weight'][self._year]
-        get_ele_trig_weight     = self._corrections['get_ele_trig_weight'][self._year]    
-        get_ele_loose_id_sf     = self._corrections['get_ele_loose_id_sf'][self._year]
-        get_ele_tight_id_sf     = self._corrections['get_ele_tight_id_sf'][self._year]
-        get_mu_tight_id_sf      = self._corrections['get_mu_tight_id_sf'][self._year]
-        get_mu_loose_id_sf      = self._corrections['get_mu_loose_id_sf'][self._year]
-        get_ele_reco_sf         = self._corrections['get_ele_reco_sf'][self._year]
-        get_ele_reco_lowet_sf   = self._corrections['get_ele_reco_lowet_sf']
-        get_mu_tight_iso_sf     = self._corrections['get_mu_tight_iso_sf'][self._year]
-        get_mu_loose_iso_sf     = self._corrections['get_mu_loose_iso_sf'][self._year]
-        get_ecal_bad_calib      = self._corrections['get_ecal_bad_calib']
-        get_deepflav_weight     = self._corrections['get_btag_weight']['deepflav'][self._year]
-        get_doublebtag_weight   = self._corrections['get_doublebtag_weight'][self._year]
-        get_mu_rochester_sf     = self._corrections['get_mu_rochester_sf'][self._year]
+        get_met_trig_weight      = self._corrections['get_met_trig_weight'][self._year]
+        get_ele_loose_id_sf      = self._corrections['get_ele_loose_id_sf']
+        get_ele_tight_id_sf      = self._corrections['get_ele_tight_id_sf']
+        get_ele_trig_weight      = self._corrections['get_ele_trig_weight'][self._year]
+        get_ele_reco_sf_below20  = self._corrections['get_ele_reco_sf_below20'][self._year]
+        get_ele_reco_err_below20 = self._corrections['get_ele_reco_err_below20'][self._year]
+        get_ele_reco_sf_above20  = self._corrections['get_ele_reco_sf_above20'][self._year]
+        get_ele_reco_err_above20 = self._corrections['get_ele_reco_err_above20'][self._year]
+        get_muon_loose_id_sf     = self._corrections['get_muon_loose_id_sf']
+        get_muon_tight_id_sf     = self._corrections['get_muon_tight_id_sf']
+        get_muon_loose_iso_sf    = self._corrections['get_muon_loose_iso_sf']
+        get_muon_tight_iso_sf    = self._corrections['get_muon_tight_iso_sf']
+        get_mu_rochester_sf      = self._corrections['get_mu_rochester_sf'][self._year]
+        get_met_xy_correction    = self._corrections['get_met_xy_correction']
+        get_pu_weight            = self._corrections['get_pu_weight']    
+        get_nlo_ewk_weight       = self._corrections['get_nlo_ewk_weight']    
+        get_nnlo_nlo_weight      = self._corrections['get_nnlo_nlo_weight'][self._year]
+        get_msd_corr             = self._corrections['get_msd_corr']
+        get_deepflav_weight      = self._corrections['get_btag_weight']['deepflav'][self._year]
+        jet_factory              = self._corrections['jet_factory']
+        fatjet_factory           = self._corrections['fatjet_factory']
+        met_factory              = self._corrections['met_factory']
         
         isLooseElectron = self._ids['isLooseElectron'] 
         isTightElectron = self._ids['isTightElectron'] 
@@ -348,75 +418,68 @@ class AnalysisProcessor(processor.ProcessorABC):
         #Initialize global quantities (MET ecc.)
         ###
 
-        met = events.MET
-        if self._year == '2017': met = events.METFixEE2017#Recommended for 2017
-        met['T']  = TVector2Array.from_polar(met.pt, met.phi)
+        npv = events.PV.npvsGood
+        run = events.run
         calomet = events.CaloMET
-        puppimet = events.PuppiMET
+        met = events.MET
+        corrected_pt, corrected_phi = get_met_xy_correction(self._year, npv, run, met.pt, met.phi, isData)
+        met['pt'] = corrected_pt
+        met['phi'] = corrected_phi
+        
 
         ###
         #Initialize physics objects
         ###
 
         mu = events.Muon
-        rochester = get_mu_rochester_sf
-        _muon_offsets = mu.pt.offsets
-        _charge = mu.charge
-        _pt = mu.pt
-        _eta = mu.eta
-        _phi = mu.phi
         if isData:
-            _k = rochester.kScaleDT(_charge, _pt, _eta, _phi)
+            _k = get_mu_rochester_sf.kScaleDT(mu.charge, mu.pt, mu.eta, mu.phi)
         else:
-            # for default if gen present
-            _gpt = mu.matched_gen.pt
-            # for backup w/o gen
-            _nl = mu.nTrackerLayers
-            _u = awkward.JaggedArray.fromoffsets(_muon_offsets, np.random.rand(*_pt.flatten().shape))
-            _hasgen = (_gpt.fillna(-1) > 0)
-            _kspread = rochester.kSpreadMC(_charge[_hasgen], _pt[_hasgen], _eta[_hasgen], _phi[_hasgen],
-                                           _gpt[_hasgen])
-            _ksmear = rochester.kSmearMC(_charge[~_hasgen], _pt[~_hasgen], _eta[~_hasgen], _phi[~_hasgen],
-                                         _nl[~_hasgen], _u[~_hasgen])
-            _k = _pt.ones_like()
-            _k[_hasgen] = _kspread
-            _k[~_hasgen] = _ksmear
+            hasgen = (mu.matched_gen.pt.fillna(-1) > 0)
+            u = awkward.JaggedArray.fromoffsets(mu.pt.offsets, np.random.rand(*_pt.flatten().shape))
+            kspread = get_mu_rochester_sf.kSpreadMC(mu.charge[hasgen], mu.pt[hasgen], mu.eta[hasgen], mu.phi[hasgen],
+                                           mu.matched_gen.pt[hasgen])
+            ksmear = get_mu_rochester_sf.kSmearMC(mu.charge[~hasgen], mu.pt[~hasgen], mu.eta[~hasgen], mu.phi[~hasgen],
+                                         mu.nTrackerLayers[~hasgen], u[~hasgen])
+            k = mu.pt.ones_like()
+            k[hasgen] = kspread
+            k[~hasgen] = ksmear
         mask = _pt < 200
-        rochester_pt = _pt.ones_like()
-        rochester_pt[~mask] = _pt[~mask]
-        rochester_pt[mask] = (_k * _pt)[mask]
+        rochester_pt = mu.pt.ones_like()
+        rochester_pt[~mask] = mu.pt[~mask]
+        rochester_pt[mask] = (k * mu.pt)[mask]
         mu['pt'] = rochester_pt
         mu['isloose'] = isLooseMuon(mu.pt,mu.eta,mu.pfRelIso04_all,mu.looseId,self._year)
         mu['istight'] = isTightMuon(mu.pt,mu.eta,mu.pfRelIso04_all,mu.tightId,self._year)
         mu['T'] = TVector2Array.from_polar(mu.pt, mu.phi)
-        mu_loose=mu[mu.isloose.astype(np.bool)]
-        mu_tight=mu[mu.istight.astype(np.bool)]
+        mu_loose=mu[mu.isloose]
+        mu_tight=mu[mu.istight]
         mu_ntot = mu.counts
         mu_nloose = mu_loose.counts
         mu_ntight = mu_tight.counts
         leading_mu = mu[mu.pt.argmax()]
-        leading_mu = leading_mu[leading_mu.istight.astype(np.bool)]
+        leading_mu = leading_mu[leading_mu.istight]
 
         e = events.Electron
         e['isclean'] = ~match(e,mu_loose,0.3) 
         e['isloose'] = isLooseElectron(e.pt,e.eta+e.deltaEtaSC,e.dxy,e.dz,e.cutBased,self._year)
         e['istight'] = isTightElectron(e.pt,e.eta+e.deltaEtaSC,e.dxy,e.dz,e.cutBased,self._year)
         e['T'] = TVector2Array.from_polar(e.pt, e.phi)
-        e_clean = e[e.isclean.astype(np.bool)]
-        e_loose = e_clean[e_clean.isloose.astype(np.bool)]
-        e_tight = e_clean[e_clean.istight.astype(np.bool)]
+        e_clean = e[e.isclean]
+        e_loose = e_clean[e_clean.isloose]
+        e_tight = e_clean[e_clean.istight]
         e_ntot = e.counts
         e_nloose = e_loose.counts
         e_ntight = e_tight.counts
         leading_e = e[e.pt.argmax()]
-        leading_e = leading_e[leading_e.isclean.astype(np.bool)]
-        leading_e = leading_e[leading_e.istight.astype(np.bool)]
+        leading_e = leading_e[leading_e.isclean]
+        leading_e = leading_e[leading_e.istight]
 
         tau = events.Tau
         tau['isclean']=~match(tau,mu_loose,0.4)&~match(tau,e_loose,0.4)
         tau['isloose']=isLooseTau(tau.pt,tau.eta,tau.idDecayMode,tau.idDecayModeNewDMs,tau.idDeepTau2017v2p1VSe,tau.idDeepTau2017v2p1VSjet,tau.idDeepTau2017v2p1VSmu,self._year)
-        tau_clean=tau[tau.isclean.astype(np.bool)]
-        tau_loose=tau_clean[tau_clean.isloose.astype(np.bool)]
+        tau_clean=tau[tau.isclean]
+        tau_loose=tau_clean[tau_clean.isloose]
         tau_ntot=tau.counts
         tau_nloose=tau_loose.counts
 
@@ -426,31 +489,22 @@ class AnalysisProcessor(processor.ProcessorABC):
         if self._year=='2016': 
             _id = 'cutBased'
         pho['isloose']=isLoosePhoton(pho.pt,pho.eta,pho[_id],self._year)&(pho.electronVeto) #added electron veto flag
-        pho['istight']=isTightPhoton(pho.pt,pho[_id],self._year)&(pho.isScEtaEB)&(pho.electronVeto) #tight photons are barrel only
         pho['T'] = TVector2Array.from_polar(pho.pt, pho.phi)
-        pho_clean=pho[pho.isclean.astype(np.bool)]
-        pho_loose=pho_clean[pho_clean.isloose.astype(np.bool)]
-        pho_tight=pho_clean[pho_clean.istight.astype(np.bool)]
+        pho_clean=pho[pho.isclean]
+        pho_loose=pho_clean[pho_clean.isloose]
         pho_ntot=pho.counts
         pho_nloose=pho_loose.counts
-        pho_ntight=pho_tight.counts
-        leading_pho = pho[pho.pt.argmax()]
-        leading_pho = leading_pho[leading_pho.isclean.astype(np.bool)]
-        leading_pho = leading_pho[leading_pho.istight.astype(np.bool)]
 
-        fj = events.AK15Puppi
+        fj = events.AK15PFPuppiJet
         fj['sd'] = fj.subjets.sum()
         fj['isclean'] =~match(fj.sd,pho_loose,1.5)&~match(fj.sd,mu_loose,1.5)&~match(fj.sd,e_loose,1.5)&~match(fj.sd,tau_loose,1.5)
         fj['isgood'] = isGoodFatJet(fj.sd.pt, fj.sd.eta, fj.jetId)
-        fj['T'] = TVector2Array.from_polar(fj.pt, fj.phi)
-        fj['msd_raw'] = (fj.subjets * (1 - fj.subjets.rawFactor)).sum().mass
         fj['msd_corr'] = get_msd_corr(fj)
-        fj['rho'] = 2 * np.log(fj.msd_corr / fj.sd.pt)
         probQCD=fj.probQCDbb+fj.probQCDcc+fj.probQCDb+fj.probQCDc+fj.probQCDothers
         probZHbb=fj.probZbb+fj.probHbb
         fj['ZHbbvsQCD'] = probZHbb/(probZHbb+probQCD)
-        fj_good = fj[fj.isgood.astype(np.bool)]
-        fj_clean = fj_good[fj_good.isclean.astype(np.bool)]
+        fj_good = fj[fj.isgood]
+        fj_clean = fj_good[fj_good.isclean]
         fj_ntot = fj.counts
         fj_ngood = fj_good.counts
         fj_nclean = fj_clean.counts
@@ -462,17 +516,12 @@ class AnalysisProcessor(processor.ProcessorABC):
         j['isiso'] = ~match(j,fj_clean[fj_clean.pt.argmax()],1.5)
         j['isdcsvL'] = (j.btagDeepB>deepcsvWPs['loose'])
         j['isdflvL'] = (j.btagDeepFlavB>deepflavWPs['loose'])
-        j['T'] = TVector2Array.from_polar(j.pt, j.phi)
-        j['p4'] = TLorentzVectorArray.from_ptetaphim(j.pt, j.eta, j.phi, j.mass)
-        j['ptRaw'] =j.pt * (1-j.rawFactor)
-        j['massRaw'] = j.mass * (1-j.rawFactor)
-        j['rho'] = j.pt.ones_like()*events.fixedGridRhoFastjetAll.array
-        j_good = j[j.isgood.astype(np.bool)]
-        j_clean = j_good[j_good.isclean.astype(np.bool)]
-        j_iso = j_clean[j_clean.isiso.astype(np.bool)]
-        j_dcsvL = j_iso[j_iso.isdcsvL.astype(np.bool)]
-        j_dflvL = j_iso[j_iso.isdflvL.astype(np.bool)]
-        j_HEM = j[j.isHEM.astype(np.bool)]
+        j_good = j[j.isgood]
+        j_clean = j_good[j_good.isclean]
+        j_iso = j_clean[j_clean.isiso]
+        j_dcsvL = j_iso[j_iso.isdcsvL]
+        j_dflvL = j_iso[j_iso.isdflvL]
+        j_HEM = j[j.isHEM]
         j_ntot=j.counts
         j_ngood=j_good.counts
         j_nclean=j_clean.counts
@@ -481,12 +530,14 @@ class AnalysisProcessor(processor.ProcessorABC):
         j_ndflvL=j_dflvL.counts
         j_nHEM = j_HEM.counts
         leading_j = j[j.pt.argmax()]
-        leading_j = leading_j[leading_j.isgood.astype(np.bool)]
-        leading_j = leading_j[leading_j.isclean.astype(np.bool)]
+        leading_j = leading_j[leading_j.isgood]
+        leading_j = leading_j[leading_j.isclean]
 
         ###
         # Calculate recoil and transverse mass
         ###
+
+        met['T']  = TVector2Array.from_polar(met.pt, met.phi)
 
         u = {
             'sr'    : met.T,
@@ -621,18 +672,56 @@ class AnalysisProcessor(processor.ProcessorABC):
             # AK4 b-tagging weights
             ###
 
-            btagSF, btagSFbc_correlatedUp, btagSFbc_correlatedDown, btagSFbc_uncorrelatedUp, btagSFbc_uncorrelatedDown, btagSFlight_correlatedUp, btagSFlight_correlatedDown, btagSFlight_uncorrelatedUp, btagSFlight_uncorrelatedDown   = get_deepflav_weight['loose'](j_iso.pt,j_iso.eta,j_iso.hadronFlavour,j_iso.isdflvL)
-            '''
-            print('btagSF',btagSF)
-            print('btagSFbc_correlatedUp',btagSFbc_correlatedUp)
-            print('btagSFbc_uncorrelatedUp',btagSFbc_uncorrelatedUp)
-            print('btagSFlight_correlatedUp',btagSFlight_correlatedUp)
-            print('btagSFlight_uncorrelatedUp',btagSFlight_uncorrelatedUp)
-            '''
+            btagSF, \
+            btagSFbc_correlatedUp, \
+            btagSFbc_correlatedDown, \
+            btagSFbc_uncorrelatedUp, \
+            btagSFbc_uncorrelatedDown, \
+            btagSFlight_correlatedUp, \
+            btagSFlight_correlatedDown, \
+            btagSFlight_uncorrelatedUp, \
+            btagSFlight_uncorrelatedDown  = get_deepflav_weight['loose'](j_iso.pt,j_iso.eta,j_iso.hadronFlavour,j_iso.isdflvL)
 
+            if 'L1PreFiringWeight' in events.columns: 
+                weights.add('prefiring', events.L1PreFiringWeight.Nom, events.L1PreFiringWeight.Up, events.L1PreFiringWeight.Dn)
+            weights.add('genw',events.genWeight)
+            weights.add('nlo_qcd',nlo_qcd)
+            weights.add('nlo_ewk',nlo_ewk)
+            if 'cen' in nnlo_nlo:
+                #weights.add('nnlo_nlo',nnlo_nlo['cen'])
+                weights.add('qcd1',np.ones(events.size), nnlo_nlo['qcd1up']/nnlo_nlo['cen'], nnlo_nlo['qcd1do']/nnlo_nlo['cen'])
+                weights.add('qcd2',np.ones(events.size), nnlo_nlo['qcd2up']/nnlo_nlo['cen'], nnlo_nlo['qcd2do']/nnlo_nlo['cen'])
+                weights.add('qcd3',np.ones(events.size), nnlo_nlo['qcd3up']/nnlo_nlo['cen'], nnlo_nlo['qcd3do']/nnlo_nlo['cen'])
+                weights.add('ew1',np.ones(events.size), nnlo_nlo['ew1up']/nnlo_nlo['cen'], nnlo_nlo['ew1do']/nnlo_nlo['cen'])
+                weights.add('ew2G',np.ones(events.size), nnlo_nlo['ew2Gup']/nnlo_nlo['cen'], nnlo_nlo['ew2Gdo']/nnlo_nlo['cen'])
+                weights.add('ew3G',np.ones(events.size), nnlo_nlo['ew3Gup']/nnlo_nlo['cen'], nnlo_nlo['ew3Gdo']/nnlo_nlo['cen'])
+                weights.add('ew2W',np.ones(events.size), nnlo_nlo['ew2Wup']/nnlo_nlo['cen'], nnlo_nlo['ew2Wdo']/nnlo_nlo['cen'])
+                weights.add('ew3W',np.ones(events.size), nnlo_nlo['ew3Wup']/nnlo_nlo['cen'], nnlo_nlo['ew3Wdo']/nnlo_nlo['cen'])
+                weights.add('ew2Z',np.ones(events.size), nnlo_nlo['ew2Zup']/nnlo_nlo['cen'], nnlo_nlo['ew2Zdo']/nnlo_nlo['cen'])
+                weights.add('ew3Z',np.ones(events.size), nnlo_nlo['ew3Zup']/nnlo_nlo['cen'], nnlo_nlo['ew3Zdo']/nnlo_nlo['cen'])
+                weights.add('mix',np.ones(events.size), nnlo_nlo['mixup']/nnlo_nlo['cen'], nnlo_nlo['mixdo']/nnlo_nlo['cen'])
+                weights.add('muF',np.ones(events.size), nnlo_nlo['muFup']/nnlo_nlo['cen'], nnlo_nlo['muFdo']/nnlo_nlo['cen'])
+                weights.add('muR',np.ones(events.size), nnlo_nlo['muRup']/nnlo_nlo['cen'], nnlo_nlo['muRdo']/nnlo_nlo['cen'])
+            weights.add('pileup',pu)
+            weights.add('trig', trig[region])
+            weights.add('ids', ids[region])
+            weights.add('reco', reco[region])
+            weights.add('isolation', isolation[region])
+            weights.add('btagSF',btagSF)
+            weights.add('btagSFbc_correlated',np.ones(events.size), btagSFbc_correlatedUp/btagSF, btagSFbc_correlatedDown/btagSF)
+            weights.add('btagSFbc_uncorrelated',np.ones(events.size), btagSFbc_uncorrelatedUp/btagSF, btagSFbc_uncorrelatedDown/btagSF)
+            weights.add('btagSFlight_correlated',np.ones(events.size), btagSFlight_correlatedUp/btagSF, btagSFlight_correlatedDown/btagSF)
+            weights.add('btagSFlight_uncorrelated',np.ones(events.size), btagSFlight_uncorrelatedUp/btagSF, btagSFlight_uncorrelatedDown/btagSF)
+
+        
         ###
         # Selections
         ###
+
+        lumimask = np.ones(events.size, dtype=np.bool)
+        if Data:
+            lumimask = lumiMasks[self._year](events.run, events.luminosityBlock)
+        selection.add('lumimask', lumimask)
 
         met_filters =  np.ones(events.size, dtype=np.bool)
         if isData: met_filters = met_filters & events.Flag['eeBadScFilter']#this filter is recommended for data only
@@ -659,8 +748,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         if self._year=='2018': noHEMmet = (met.pt>470)|(met.phi>-0.62)|(met.phi<-1.62)
 
         leading_fj = fj[fj.sd.pt.argmax()]
-        leading_fj = leading_fj[leading_fj.isgood.astype(np.bool)]
-        leading_fj = leading_fj[leading_fj.isclean.astype(np.bool)]
+        leading_fj = leading_fj[leading_fj.isgood]
+        leading_fj = leading_fj[leading_fj.isclean]
         selection.add('iszeroL', (e_nloose==0)&(mu_nloose==0)&(tau_nloose==0)&(pho_nloose==0))
         selection.add('isoneM', (e_nloose==0)&(mu_ntight==1)&(mu_nloose==1)&(tau_nloose==0)&(pho_nloose==0))
         selection.add('isoneE', (e_ntight==1)&(e_nloose==1)&(mu_nloose==0)&(tau_nloose==0)&(pho_nloose==0))
@@ -690,10 +779,80 @@ class AnalysisProcessor(processor.ProcessorABC):
             'qcdcr': ['recoil_qcdcr','mindphi_qcdcr','minDphi_qcdcr','calo_qcdcr','msd40','fatjet', 'noHEMj','iszeroL','noextrab','met_filters','met_triggers','noHEMmet'],
         }
 
-        isFilled = False
+        def normalize(val, cut):
+            if cut is None:
+                ar = ak.to_numpy(ak.fill_none(val, np.nan))
+                return ar
+            else:
+                ar = ak.to_numpy(ak.fill_none(val[cut], np.nan))
+                return ar
+                
+        def fill(region, systematic):
+            cut = selection.all(*regions[region])
+            sname = 'nominal' if systematic is None else systematic
+            if systematic in weights.variations:
+                weight = weights.weight(modifier=systematic)[cut]
+            else:
+                weight = weights.weight()[cut]
+            output['template'].fill(
+                  region=region,
+                  systematic=sname,
+                  recoil=normalize(u[region].mag, cut),
+                  fjmass=normalize(leading_fj.msd_corr, cut),
+                  ZHbbvsQCD=normalize(leading_fj.ZHbbvsQCD, cut),
+                  weight=weight
+            )
+            if systematic is None:
+                variables = {
+                    'mindphirecoil':          abs(u[region].delta_phi(j_clean.T)).min(),
+                    'minDphirecoil':          abs(u[region].delta_phi(fj_clean.T)).min(),
+                    'CaloMinusPfOverRecoil':  abs(calomet.pt - met.pt) / u[region].mag,
+                    'met':                    met.pt.flatten(),
+                    'metphi':                 met.phi.flatten(),
+                    'mindphimet':             abs(met.T.delta_phi(j_clean.T)).min(),
+                    'minDphimet':             abs(met.T.delta_phi(fj_clean.T)).min(),
+                    'j1pt':                   leading_j.pt.sum(),
+                    'j1eta':                  leading_j.eta.sum(),
+                    'j1phi':                  leading_j.phi.sum(),
+                    'fj1pt':                  leading_fj.sd.pt.sum(),
+                    'fj1eta':                 leading_fj.sd.eta.sum(),
+                    'fj1phi':                 leading_fj.sd.phi.sum(),
+                    'njets':                  j_nclean,
+                    'ndflvL':                 j_ndflvL,
+                    'nfjclean':               fj_nclean,
+                }
+                if region in mT:
+                    variables['mT']           = mT[region]
+                if 'e' in region:
+                    variables['l1pt']      = leading_e.pt.sum()
+                    variables['l1phi']     = leading_e.phi.sum()
+                    variables['l1eta']     = leading_e.eta.sum()
+                if 'm' in region:
+                    variables['l1pt']      = leading_mu.pt.sum()
+                    variables['l1phi']     = leading_mu.phi.sum()
+                    variables['l1eta']     = leading_mu.eta.sum()
+                for variable in output:
+                    if variable not in variables:
+                        continue
+                    normalized_variable = {variable: normalize(variables[variable],cut)}
+                    output[variable].fill(
+                        region=region,
+                        ZHbbvsQCD=normalize(leading_fj.ZHbbvsQCD,cut),
+                        **normalized_variable,
+                        weight=weight,
+                    )
+                output['ZHbbvsQCD'].fill(
+                      region=region,
+                      ZHbbvsQCD=normalize(leading_fj.ZHbbvsQCD, cut),
+                      weight=weight
+                )
 
-        #for region in selected_regions: 
-        for region, cuts in regions.items():
+        if shift_name is None:
+            systematics = [None] + list(weights.variations)
+        else:
+            systematics = [shift_name]
+            
+        for region in regions:
             if region not in selected_regions: continue
 
             ###
@@ -704,253 +863,34 @@ class AnalysisProcessor(processor.ProcessorABC):
             selection.add('mindphi_'+region, (abs(u[region].delta_phi(j_clean.T)).min()>0.5))
             selection.add('minDphi_'+region, (abs(u[region].delta_phi(fj_clean.T)).min()>1.5))
             selection.add('calo_'+region, ( (abs(calomet.pt - met.pt) / u[region].mag) < 0.5))
-            #regions[region].update({'recoil_'+region,'mindphi_'+region})
             if 'qcd' not in region:
                 regions[region].insert(0, 'recoil_'+region)
                 regions[region].insert(3, 'mindphi_'+region)
                 regions[region].insert(4, 'minDphi_'+region)
                 regions[region].insert(5, 'calo_'+region)
-            variables = {
-                'mindphirecoil':          abs(u[region].delta_phi(j_clean.T)).min(),
-                'minDphirecoil':          abs(u[region].delta_phi(fj_clean.T)).min(),
-                'CaloMinusPfOverRecoil':  abs(calomet.pt - met.pt) / u[region].mag,
-                'met':                    met.pt.flatten(),
-                'metphi':                 met.phi.flatten(),
-                'mindphimet':             abs(met.T.delta_phi(j_clean.T)).min(),
-                'minDphimet':             abs(met.T.delta_phi(fj_clean.T)).min(),
-                'j1pt':                   leading_j.pt.sum(),
-                'j1eta':                  leading_j.eta.sum(),
-                'j1phi':                  leading_j.phi.sum(),
-                'fj1pt':                  leading_fj.sd.pt.sum(),
-                'fj1eta':                 leading_fj.sd.eta.sum(),
-                'fj1phi':                 leading_fj.sd.phi.sum(),
-                'njets':                  j_nclean,
-                'ndflvL':                 j_ndflvL,
-                'nfjclean':               fj_nclean,
-            }
-            if region in mT:
-                variables['mT']           = mT[region]
-            if 'e' in region:
-                variables['l1pt']      = leading_e.pt.sum()
-                variables['l1phi']     = leading_e.phi.sum()
-                variables['l1eta']     = leading_e.eta.sum()
-            if 'm' in region:
-                variables['l1pt']      = leading_mu.pt.sum()
-                variables['l1phi']     = leading_mu.phi.sum()
-                variables['l1eta']     = leading_mu.eta.sum()
 
-            def fill(dataset, weight, cut):
-                for histname, h in hout.items():
-                    if not isinstance(h, hist.Hist):
-                        continue
-                    if histname not in variables:
-                        continue
-                    flat_variable = {histname: variables[histname]}
-                    h.fill(dataset=dataset, 
-                           region=region, 
-                           **flat_variable, 
-                           ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(),
-                           weight=weight*cut)
-
-            if isData:
-                if not isFilled:
-                    hout['sumw'].fill(dataset=dataset, sumw=1, weight=1)
-                    isFilled=True
-                cut = selection.all(*regions[region])
-                hout['template'].fill(dataset=dataset,
-                                      region=region,
-                                      systematic='nominal',
-                                      recoil=u[region].mag,
-                                      fjmass=leading_fj.msd_corr.sum(),
-                                      ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(),
-                                      weight=np.ones(events.size)*cut)
-                hout['ZHbbvsQCD'].fill(dataset=dataset,
-                                      region=region,
-                                      ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(),
-                                      weight=np.ones(events.size)*cut)
-                fill(dataset, np.ones(events.size), cut)
-            else:
-                weights = processor.Weights(len(events))
-                if 'L1PreFiringWeight' in events.columns: weights.add('prefiring',events.L1PreFiringWeight.Nom)
-                weights.add('genw',events.genWeight)
-                weights.add('nlo_qcd',nlo_qcd)
-                weights.add('nlo_ewk',nlo_ewk)
-                if 'cen' in nnlo_nlo:
-                    #weights.add('nnlo_nlo',nnlo_nlo['cen'])
-                    weights.add('qcd1',np.ones(events.size), nnlo_nlo['qcd1up']/nnlo_nlo['cen'], nnlo_nlo['qcd1do']/nnlo_nlo['cen'])
-                    weights.add('qcd2',np.ones(events.size), nnlo_nlo['qcd2up']/nnlo_nlo['cen'], nnlo_nlo['qcd2do']/nnlo_nlo['cen'])
-                    weights.add('qcd3',np.ones(events.size), nnlo_nlo['qcd3up']/nnlo_nlo['cen'], nnlo_nlo['qcd3do']/nnlo_nlo['cen'])
-                    weights.add('ew1',np.ones(events.size), nnlo_nlo['ew1up']/nnlo_nlo['cen'], nnlo_nlo['ew1do']/nnlo_nlo['cen'])
-                    weights.add('ew2G',np.ones(events.size), nnlo_nlo['ew2Gup']/nnlo_nlo['cen'], nnlo_nlo['ew2Gdo']/nnlo_nlo['cen'])
-                    weights.add('ew3G',np.ones(events.size), nnlo_nlo['ew3Gup']/nnlo_nlo['cen'], nnlo_nlo['ew3Gdo']/nnlo_nlo['cen'])
-                    weights.add('ew2W',np.ones(events.size), nnlo_nlo['ew2Wup']/nnlo_nlo['cen'], nnlo_nlo['ew2Wdo']/nnlo_nlo['cen'])
-                    weights.add('ew3W',np.ones(events.size), nnlo_nlo['ew3Wup']/nnlo_nlo['cen'], nnlo_nlo['ew3Wdo']/nnlo_nlo['cen'])
-                    weights.add('ew2Z',np.ones(events.size), nnlo_nlo['ew2Zup']/nnlo_nlo['cen'], nnlo_nlo['ew2Zdo']/nnlo_nlo['cen'])
-                    weights.add('ew3Z',np.ones(events.size), nnlo_nlo['ew3Zup']/nnlo_nlo['cen'], nnlo_nlo['ew3Zdo']/nnlo_nlo['cen'])
-                    weights.add('mix',np.ones(events.size), nnlo_nlo['mixup']/nnlo_nlo['cen'], nnlo_nlo['mixdo']/nnlo_nlo['cen'])
-                    weights.add('muF',np.ones(events.size), nnlo_nlo['muFup']/nnlo_nlo['cen'], nnlo_nlo['muFdo']/nnlo_nlo['cen'])
-                    weights.add('muR',np.ones(events.size), nnlo_nlo['muRup']/nnlo_nlo['cen'], nnlo_nlo['muRdo']/nnlo_nlo['cen'])
-                weights.add('pileup',pu)
-                weights.add('trig', trig[region])
-                weights.add('ids', ids[region])
-                weights.add('reco', reco[region])
-                weights.add('isolation', isolation[region])
-                weights.add('btagSF',btagSF)
-                weights.add('btagSFbc_correlated',np.ones(events.size), btagSFbc_correlatedUp/btagSF, btagSFbc_correlatedDown/btagSF)
-                weights.add('btagSFbc_uncorrelated',np.ones(events.size), btagSFbc_uncorrelatedUp/btagSF, btagSFbc_uncorrelatedDown/btagSF)
-                weights.add('btagSFlight_correlated',np.ones(events.size), btagSFlight_correlatedUp/btagSF, btagSFlight_correlatedDown/btagSF)
-                weights.add('btagSFlight_uncorrelated',np.ones(events.size), btagSFlight_uncorrelatedUp/btagSF, btagSFlight_uncorrelatedDown/btagSF)
-
-                ###
-                # AK15 doubleb-tagging weights
-                ###
+            for systematic in systematics:
+                if isData and systematic is not None:
+                    continue
+                fill(region, systematic)
                 
-                if('mhs' in dataset):
-                    doublebtag, doublebtagUp,  doublebtagDown= get_doublebtag_weight(leading_fj.sd.pt.sum())
-                    weights.add('doublebtag',doublebtag, doublebtagUp, doublebtagDown)
-
-                if 'WJets' in dataset or 'ZJets' in dataset or 'DY' in dataset:
-                    if not isFilled:
-                        hout['sumw'].fill(dataset='HF--'+dataset, sumw=1, weight=events.genWeight.sum())
-                        hout['sumw'].fill(dataset='LF--'+dataset, sumw=1, weight=events.genWeight.sum())
-                        isFilled=True
-                    whf = ((gen[gen.isb].counts>0)|(gen[gen.isc].counts>0)).astype(np.int)
-                    wlf = (~(whf.astype(np.bool))).astype(np.int)
-                    cut = selection.all(*regions[region])
-                    systematics = [None,
-                                   'btagSFbc_correlatedUp',
-                                   'btagSFbc_correlatedDown',
-                                   'btagSFbc_uncorrelatedUp',
-                                   'btagSFbc_uncorrelatedDown',
-                                   'btagSFlight_correlatedUp',
-                                   'btagSFlight_correlatedDown',
-                                   'btagSFlight_uncorrelatedUp',
-                                   'btagSFlight_uncorrelatedDown',
-                                   'qcd1Up',
-                                   'qcd1Down',
-                                   'qcd2Up',
-                                   'qcd2Down',
-                                   'qcd3Up',
-                                   'qcd3Down',
-                                   'muFUp',
-                                   'muFDown',
-                                   'muRUp',
-                                   'muRDown',
-                                   'ew1Up',
-                                   'ew1Down',
-                                   'ew2GUp',
-                                   'ew2GDown',
-                                   'ew2WUp',
-                                   'ew2WDown',
-                                   'ew2ZUp',
-                                   'ew2ZDown',
-                                   'ew3GUp',
-                                   'ew3GDown',
-                                   'ew3WUp',
-                                   'ew3WDown',
-                                   'ew3ZUp',
-                                   'ew3ZDown',
-                                   'mixUp',
-                                   'mixDown']
-                    for systematic in systematics:
-                        sname = 'nominal' if systematic is None else systematic
-                        hout['template'].fill(dataset='HF--'+dataset,
-                                              region=region,
-                                              systematic=sname,
-                                              recoil=u[region].mag,
-                                              fjmass=leading_fj.msd_corr.sum(),
-                                              ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(),
-                                              weight=weights.weight(modifier=systematic)*whf*cut)
-                        hout['template'].fill(dataset='LF--'+dataset,
-                                              region=region,
-                                              systematic=sname,
-                                              recoil=u[region].mag,
-                                              fjmass=leading_fj.msd_corr.sum(),
-                                              ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(),
-                                              weight=weights.weight(modifier=systematic)*wlf*cut)
-                    ## Cutflow loop
-                    vcut=np.zeros(events.size, dtype=np.int)
-                    hout['cutflow'].fill(dataset='HF--'+dataset, region=region, cut=vcut, ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(), weight=weights.weight()*whf)
-                    hout['cutflow'].fill(dataset='LF--'+dataset, region=region, cut=vcut, ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(), weight=weights.weight()*wlf)
-                    allcuts = set()
-                    for i, icut in enumerate(cuts):
-                        allcuts.add(icut)
-                        jcut = selection.all(*allcuts)
-                        vcut = (i+1)*jcut
-                        hout['cutflow'].fill(dataset='HF--'+dataset, region=region, cut=vcut, ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(), weight=weights.weight()*jcut*whf)
-                        hout['cutflow'].fill(dataset='LF--'+dataset, region=region, cut=vcut, ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(), weight=weights.weight()*jcut*wlf)
-
-                    hout['ZHbbvsQCD'].fill(dataset='HF--'+dataset,
-                                           region=region,
-                                           ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(),
-                                           weight=weights.weight()*whf*cut)
-                    hout['ZHbbvsQCD'].fill(dataset='LF--'+dataset,
-                                           region=region,
-                                           ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(),
-                                           weight=weights.weight()*wlf*cut)
-                    fill('HF--'+dataset, weights.weight()*whf, cut)
-                    fill('LF--'+dataset, weights.weight()*wlf, cut)
-                else:
-                    if not isFilled:
-                        hout['sumw'].fill(dataset=dataset, sumw=1, weight=events.genWeight.sum())
-                        isFilled=True
-                    cut = selection.all(*regions[region])
-                    systematics = [None, 
-                                   'btagSFbc_correlatedUp', 
-                                   'btagSFbc_correlatedDown', 
-                                   'btagSFbc_uncorrelatedUp', 
-                                   'btagSFbc_uncorrelatedDown',
-                                   'btagSFlight_correlatedUp', 
-                                   'btagSFlight_correlatedDown', 
-                                   'btagSFlight_uncorrelatedUp', 
-                                   'btagSFlight_uncorrelatedDown',
-                               ]
-                    if('mhs' in dataset):
-                        systematics.append('doublebtagUp')
-                        systematics.append('doublebtagDown')
-                    for systematic in systematics:
-                        sname = 'nominal' if systematic is None else systematic
-                        hout['template'].fill(dataset=dataset,
-                                              region=region,
-                                              systematic=sname,
-                                              recoil=u[region].mag,
-                                              fjmass=leading_fj.msd_corr.sum(),
-                                              ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(),
-                                              weight=weights.weight(modifier=systematic)*cut)
-                    ## Cutflow loop
-                    vcut=np.zeros(events.size, dtype=np.int)
-                    hout['cutflow'].fill(dataset=dataset, region=region, cut=vcut, ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(), weight=weights.weight())
-                    allcuts = set()
-                    for i, icut in enumerate(cuts):
-                        allcuts.add(icut)
-                        jcut = selection.all(*allcuts)
-                        vcut = (i+1)*jcut
-                        hout['cutflow'].fill(dataset=dataset, region=region, cut=vcut, ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(), weight=weights.weight()*jcut)
-
-                    hout['ZHbbvsQCD'].fill(dataset=dataset,
-                                           region=region,
-                                           ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(),
-                                           weight=weights.weight()*cut)
-                    fill(dataset, weights.weight(), cut)
-
-        return hout
+        return dataset, output
 
     def postprocess(self, accumulator):
-        scale = {}
-        for d in accumulator['sumw'].identifiers('dataset'):
-            print('Scaling:',d.name)
-            dataset = d.name
-            if '--' in dataset: dataset = dataset.split('--')[1]
-            print('Cross section:',self._xsec[dataset])
-            if self._xsec[dataset]!= -1: scale[d.name] = self._lumi*self._xsec[dataset]
-            else: scale[d.name] = 1
+        dataset, output = accumulator
+        print('Scaling:', dataset)
+        print('Cross section:',self._xsec[dataset])
 
-        for histname, h in accumulator.items():
-            if histname == 'sumw': continue
-            if isinstance(h, hist.Hist):
-                h.scale(scale, axis='dataset')
+        scale = 1
+        if self._xsec[dataset]!= -1: 
+            scale = self._lumi*self._xsec[dataset]
 
-        return accumulator
+        for key in output:
+            if key=='sumw': 
+                continue
+            output[key] *= scale
+            
+        return output
 
 if __name__ == '__main__':
     parser = OptionParser()

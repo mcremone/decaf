@@ -10,6 +10,7 @@ processes =    {
     'EGamma':('EGamma','Data',1),
     'SingleElectron':('SingleElectron','Data',1),
     'SinglePhoton':('SinglePhoton','Data',1),
+    'SingleMuon':('SingleMuon','Data',1),
     
     # inclusive NLO V+jets 
 #    'DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8':('ZJets_nlo','MC',6025.2),

@@ -25,7 +25,7 @@ def merge(folder,variable=None, exclude=None):
                print('Opening:',filename)
                hin = load(filename)
                if var not in tmp: tmp[var]={}
-               if filename.split('--')[1] not in tmp[var]: tmp[var][filename.split('--')[1]]=hin[var]
+               if filename.split('--')[1] not in tmp[var]: tmp[var][filename.split('--')[1].replace('.reduced','')]=hin[var]
                del hin
           print(tmp)
           save(tmp, folder+'/'+var+'.merged')

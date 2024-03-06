@@ -37,10 +37,10 @@ class BTagEfficiency(processor.ProcessorABC):
     def process(self, events):
         
         dataset = events.metadata['dataset']
-        isGoodJet = self._ids['isGoodJet']
+        isGoodAK4 = self._ids['isGoodAK4']
 
         j = events.Jet
-        j['isgood'] = isGoodJet(j.pt, j.eta, j.jetId, j.puId, j.neHEF, j.chHEF, self._year)
+        j['isgood'] = isGoodAK4(j, self._year)
         j_good = j[j.isgood]
 
         name = {}

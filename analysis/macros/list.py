@@ -90,32 +90,37 @@ for dataset in xsections.keys():
                except:
                     urllist = find([path])
                print(urllist)
+          for url in urllist[:]:
+               if options.year not in url:
+                    urllist.remove(url)
+                    continue
+               if 'Data' in url and 'KITv2' in url:
+                    urllist.remove(url)
+                    continue
+               if 'failed' in url: 
+                    urllist.remove(url)
+                    continue
+               if '.root' not in url: 
+                    urllist.remove(url)
+                    continue
+               try:
+                    infile = uproot.open(redirect+url)
+               except:
+                    print("File",redirect+url,"is corrupted, removing.")
+                    urllist.remove(url)
+                    continue
+               else:
+                    del infile
+
      else:
           redirect = globalredirect
+          print("Searching for",dataset,"in centrally produced NanoAOD")
           query="dasgoclient --query=\"dataset dataset=/"+dataset+"/"+campaigns[options.year]+"*/NANOAOD*\""
           dataset=os.popen(query).read().split("\n")[0]
           print('Dataset is:', dataset)
           query="dasgoclient --query=\"file dataset="+dataset+"\""
           urllist = os.popen(query).read().split("\n")
      for url in urllist[:]:
-          if options.year not in url:
-              urllist.remove(url)
-              continue
-          if 'Data' in url and 'KITv2' in url:
-              urllist.remove(url)
-              continue
-          if 'failed' in url: 
-              urllist.remove(url)
-              continue
-          if '.root' not in url: 
-              urllist.remove(url)
-              continue
-          try:
-              infile = uproot.open(redirect+url)
-          except:
-              urllist.remove(url)
-          else:
-              del infile
           urllist[urllist.index(url)]=redirect+url
      print('list lenght:',len(urllist))
      if options.special:

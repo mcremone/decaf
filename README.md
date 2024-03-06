@@ -128,7 +128,7 @@ python utils/common.py
 This will generate a series of auxiliary functions and information, like the AK4 b-tagging working points, and it will save such information in a `.coffea` file in the `data` folder. AK4 b-tagging working points are essential to measure the MC efficiencies and they are used by the `btag` processor in the `processors` folder. To generate the processor file: 
 
 ```
-python3 processors/btageff.py -y 2018 -m 2018 -n 2017
+python3 processors/btageff.py -y 2018 -m 2018 -n 2018
 ```
 
 The options for this script are:

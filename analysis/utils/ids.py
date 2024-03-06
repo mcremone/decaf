@@ -1,12 +1,6 @@
 import numpy as np
 from coffea.util import save
-
-
-def Mask(pt):
-    # Just a complicated way to initialize a jagged array with the needed shape
-    # to True
-    return ~(pt == np.nan)
-
+import awkward as ak
 
 ######
 ## Electron
@@ -16,8 +10,18 @@ def Mask(pt):
 ######
 
 
-def isLooseElectron(pt, eta, dxy, dz, loose_id, year):
-    mask = Mask(pt)
+def isLooseElectron(e, year):
+    
+    if '2016' in year:
+        year='2016'
+
+    pt=e.pt
+    eta=e.eta+e.deltaEtaSC
+    dxy=e.dxy
+    dz=e.dz
+    loose_id=e.cutBased
+    
+    mask = ~np.isnan(ak.ones_like(pt))
     if year == "2016":
         mask = (
             (pt > 10)
@@ -66,9 +70,17 @@ def isLooseElectron(pt, eta, dxy, dz, loose_id, year):
     return mask
 
 
-def isTightElectron(pt, eta, dxy, dz, tight_id, year):
-    # 2017/18 pT thresholds adjusted to match monojet, using dedicated ID SFs
-    mask = Mask(pt)
+def isTightElectron(e, year):
+    if '2016' in year:
+        year='2016'
+
+    pt=e.pt
+    eta=e.eta+e.deltaEtaSC
+    dxy=e.dxy
+    dz=e.dz
+    tight_id=e.cutBased
+    
+    mask = ~np.isnan(ak.ones_like(pt))
     if year == "2016":  # Trigger: HLT_Ele27_WPTight_Gsf_v
         mask = (
             (pt > 40)
@@ -126,9 +138,17 @@ def isTightElectron(pt, eta, dxy, dz, tight_id, year):
 #######
 
 
-def isLooseMuon(pt, eta, iso, loose_id, year):
-    # dxy and dz cuts are missing from med_id; loose isolation is 0.25
-    mask = Mask(pt)
+def isLooseMuon(mu, year):
+    
+    if '2016' in year:
+        year='2016'
+        
+    pt=mu.pt
+    eta=mu.eta
+    iso=mu.pfRelIso04_all
+    loose_id=mu.looseId
+    
+    mask = ~np.isnan(ak.ones_like(pt))
     if year == "2016":
         mask = (pt > 20) & (abs(eta) < 2.4) & loose_id & (iso < 0.25)
     elif year == "2017":
@@ -138,9 +158,17 @@ def isLooseMuon(pt, eta, iso, loose_id, year):
     return mask
 
 
-def isTightMuon(pt, eta, iso, tight_id, year):
-    # dxy and dz cuts are baked on tight_id; tight isolation is 0.15
-    mask = Mask(pt)
+def isTightMuon(mu, year):
+    
+    if '2016' in year:
+        year='2016'
+        
+    pt=mu.pt
+    eta=mu.eta
+    iso=mu.pfRelIso04_all
+    tight_id=mu.tightId
+    
+    mask = ~np.isnan(ak.ones_like(pt))
     if year == "2016":
         mask = (pt > 30) & (abs(eta) < 2.4) & tight_id & (iso < 0.15)
     elif year == "2017":
@@ -150,9 +178,17 @@ def isTightMuon(pt, eta, iso, tight_id, year):
     return mask
 
 
-def isSoftMuon(pt, eta, iso, tight_id, year):
-    # dxy and dz cuts are baked on tight_id; tight isolation is 0.15
-    mask = Mask(pt)
+def isSoftMuon(mu, year):
+    
+    if '2016' in year:
+        year='2016'
+        
+    pt=mu.pt
+    eta=mu.eta
+    iso=mu.pfRelIso04_all
+    loose_id=mu.tightId
+    
+    mask = ~np.isnan(ak.ones_like(pt))
     if year == "2016":
         mask = (pt > 5) & (abs(eta) < 2.4) & tight_id & (iso > 0.15)
     elif year == "2017":
@@ -167,6 +203,7 @@ def isSoftMuon(pt, eta, iso, tight_id, year):
 ## https://twiki.cern.ch/twiki/bin/viewauth/CMS/TauIDRecommendationForRun2
 ## The decayModeFindingNewDMs: recommended for use with DeepTauv2p1, where decay
 ## modes 5 and 6 should be explicitly rejected.
+## This should already be applied in NanoAOD.
 ##
 ## Tau_idDeepTau2017v2p1VSe ID working points (bitmask):
 ## 1 = VVVLoose, 2 = VVLoose, 4 = VLoose, 8 = Loose,
@@ -181,40 +218,55 @@ def isSoftMuon(pt, eta, iso, tight_id, year):
 ######
 
 
-def isLooseTau(pt, eta, decayMode, decayModeDMs, ide, idj, idm, year):
-    mask = Mask(pt)
+def isLooseTau(tau, year):
+    
+    if '2016' in year:
+        year='2016'
+        
+    pt = tau.pt
+    eta = tau.eta
+    ide = tau.idDeepTau2017v2p1VSe
+    idj = tau.idDeepTau2017v2p1VSjet
+    idm = tau.idDeepTau2017v2p1VSmu
+    decayMode = tau.decayMode
+    try:
+        decayModeDMs=tau.decayModeFindingNewDMs
+    except:
+        decayModeDMs=~np.isnan(ak.ones_like(pt))
+
+    mask = ~np.isnan(ak.ones_like(pt))
     if year == "2016":
         mask = (
             (pt > 20)
             & (abs(eta) < 2.3)
-            & ~(decayMode == 5)
-            & ~(decayMode == 6)
+            #& ~(decayMode == 5)
+            #& ~(decayMode == 6)
             & decayModeDMs
-            & ((ide & 16) == 16)
+            #& ((ide & 16) == 16)
             & ((idj & 4) == 4)
-            & ((idm & 2) == 2)
+            #& ((idm & 2) == 2)
         )
     elif year == "2017":
         mask = (
             (pt > 20)
             & (abs(eta) < 2.3)
-            & ~(decayMode == 5)
-            & ~(decayMode == 6)
+            #& ~(decayMode == 5)
+            #& ~(decayMode == 6)
             & decayModeDMs
-            & ((ide & 16) == 16)
+            #& ((ide & 16) == 16)
             & ((idj & 4) == 4)
-            & ((idm & 2) == 2)
+            #& ((idm & 2) == 2)
         )
     elif year == "2018":
         mask = (
             (pt > 20)
             & (abs(eta) < 2.3)
-            & ~(decayMode == 5)
-            & ~(decayMode == 6)
+            #& ~(decayMode == 5)
+            #& ~(decayMode == 6)
             & decayModeDMs
-            & ((ide & 16) == 16)
+            #& ((ide & 16) == 16)
             & ((idj & 4) == 4)
-            & ((idm & 2) == 2)
+            #& ((idm & 2) == 2)
         )
     return mask
 
@@ -228,8 +280,16 @@ def isLooseTau(pt, eta, decayMode, decayModeDMs, ide, idj, idm, year):
 ######
 
 
-def isLoosePhoton(pt, eta, loose_id, year):
-    mask = Mask(pt)
+def isLoosePhoton(pho, year):
+    
+    if '2016' in year:
+        year='2016'
+
+    pt=pho.pt
+    eta=pho.eta
+    loose_id=pho.cutBased
+    
+    mask = ~np.isnan(ak.ones_like(pt))
     if year == "2016":
         mask = (
             (pt > 20)
@@ -254,21 +314,24 @@ def isLoosePhoton(pt, eta, loose_id, year):
             & (abs(eta) < 2.5)
             & (loose_id >= 1)
         )
-    return mask
+    return mask&(pho.electronVeto)
 
 
-def isTightPhoton(pt, tight_id, year):
-    # isScEtaEB is used (barrel only), so no eta requirement
-    # 2017/18 pT requirement adjusted to match monojet, using dedicated ID SFs
-    # Tight photon use medium ID, as in monojet
-    mask = Mask(pt)
+def isTightPhoton(pho, year):
+    if '2016' in year:
+        year='2016'
+
+    pt=pho.pt
+    tight_id=pho.cutBased
+    
+    mask = ~np.isnan(ak.ones_like(pt))
     if year == "2016":
         mask = (pt > 200) & (tight_id == 3)
     elif year == "2017":
         mask = (pt > 230) & (tight_id == 3)
     elif year == "2018":
         mask = (pt > 230) & (tight_id == 3)
-    return mask
+    return mask&(pho.isScEtaEB)&(pho.electronVeto) #tight photons are barrel only
 
 
 ######
@@ -278,7 +341,12 @@ def isTightPhoton(pt, tight_id, year):
 ######
 
 
-def isGoodFatJet(pt, eta, jet_id):
+def isGoodAK15(fj):
+    
+    pt=fj.pt
+    eta=fj.eta
+    jet_id=fj.jetId
+    
     mask = (
         (pt > 160) & (abs(eta) < 2.4) & ((jet_id & 6) == 6)
     )
@@ -309,7 +377,17 @@ def isGoodFatJet(pt, eta, jet_id):
 ######
 
 
-def isGoodJet(pt, eta, jet_id, pu_id, nhf, chf, year):
+def isGoodAK4(j, year):
+    if '2016' in year:
+        year='2016'
+    
+    pt=j.pt
+    eta=j.eta
+    jet_id=j.jetId
+    pu_id=j.puId
+    nhf=j.neHEF
+    chf=j.chHEF
+    
     mask = (pt > 30) & (abs(eta) < 2.4) & ((jet_id & 6) == 6)
     if year == "2016":
         mask = ((pt >= 50) & mask) | ((pt < 50) & mask & ((pu_id & 1) == 1)) & (nhf < 0.8) & (chf > 0.1)
@@ -325,7 +403,12 @@ def isGoodJet(pt, eta, jet_id, pu_id, nhf, chf, year):
 ######
 
 
-def isHEMJet(pt, eta, phi):
+def isHEMJet(j):
+
+    pt=j.pt
+    eta=j.eta
+    phi=j.phi
+    
     mask = (pt > 30) & (eta > -3.0) & (eta < -1.3) & (phi > -1.57) & (phi < -0.87)
     return mask
 
@@ -339,7 +422,7 @@ ids["isSoftMuon"] = isSoftMuon
 ids["isLooseTau"] = isLooseTau
 ids["isLoosePhoton"] = isLoosePhoton
 ids["isTightPhoton"] = isTightPhoton
-ids["isGoodJet"] = isGoodJet
-ids["isGoodFatJet"] = isGoodFatJet
+ids["isGoodAK4"] = isGoodAK4
+ids["isGoodAK15"] = isGoodAK15
 ids["isHEMJet"] = isHEMJet
 save(ids, "data/ids.coffea")

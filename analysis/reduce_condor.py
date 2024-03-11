@@ -35,12 +35,12 @@ if options.tar:
 
 if options.cluster == 'kisti':
     if options.copy:
-        os.system('xrdfs root://cms-xrdr.private.lo:3094/ rm /xrd/store/user/'+os.environ['USER']+'/cmssw_11_3_4.tgz')
+        os.system('xrdfs root://cms-xrdr.private.lo:2094/ rm /xrd/store/user/'+os.environ['USER']+'/cmssw_11_3_4.tgz')
         print('cmssw removed')
-        os.system('xrdcp -f ../../../../cmssw_11_3_4.tgz root://cms-xrdr.private.lo:3094//xrd/store/user/'+os.environ['USER']+'/cmssw_11_3_4.tgz')
-        os.system('xrdfs root://cms-xrdr.private.lo:3094/ rm /xrd/store/user/'+os.environ['USER']+'/pylocal_3_8.tgz') 
+        os.system('xrdcp -f ../../../../cmssw_11_3_4.tgz root://cms-xrdr.private.lo:2094//xrd/store/user/'+os.environ['USER']+'/cmssw_11_3_4.tgz')
+        os.system('xrdfs root://cms-xrdr.private.lo:2094/ rm /xrd/store/user/'+os.environ['USER']+'/pylocal_3_8.tgz') 
         print('pylocal removed')
-        os.system('xrdcp -f ../../../../pylocal_3_8.tgz root://cms-xrdr.private.lo:3094//xrd/store/user/'+os.environ['USER']+'/pylocal_3_8.tgz')
+        os.system('xrdcp -f ../../../../pylocal_3_8.tgz root://cms-xrdr.private.lo:2094//xrd/store/user/'+os.environ['USER']+'/pylocal_3_8.tgz')
     jdl = """universe = vanilla
 Executable = reduce.sh
 Should_Transfer_Files = YES

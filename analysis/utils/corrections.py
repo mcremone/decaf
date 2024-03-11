@@ -13,6 +13,8 @@ import uproot
 from coffea.util import save, load
 import json
 
+import hist
+
 ###
 # MET trigger efficiency SFs, 2017/18 from monojet. Depends on recoil.
 ###
@@ -27,7 +29,15 @@ def get_met_trig_weight(year, met):
     corr = convert.from_uproot_THx(met_trig_hists[year])
     evaluator = corr.to_evaluator()
 
-    return evaluator.evaluate(met)
+    met  = ak.fill_none(met, 0.)
+    met  = ak.where((met>950.), ak.full_like(met,950.), met)
+
+    weight = ak.where(
+        ~np.isnan(ak.fill_none(met, np.nan)),
+        evaluator.evaluate(met),
+        ak.zeros_like(met)
+    )
+    return weight
 
 ####
 # Electron ID scale factor
@@ -40,7 +50,10 @@ def get_ele_loose_id_sf (year, eta, pt):
     evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/electron.json.gz')
 
     flateta, counts = ak.flatten(eta), ak.num(eta)
+    
+    pt = ak.where((pt<10.), ak.full_like(pt,10.), pt)
     flatpt = ak.flatten(pt)
+    
     weight = evaluator["UL-Electron-ID-SF"].evaluate(year, "sf", "Loose", flateta, flatpt)
 
     return ak.unflatten(weight, counts=counts)
@@ -49,9 +62,12 @@ def get_ele_tight_id_sf (year, eta, pt):
     evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/electron.json.gz')
 
     flateta, counts = ak.flatten(eta), ak.num(eta)
+    
+    pt = ak.where((pt<10.), ak.full_like(pt,10.), pt)
     flatpt = ak.flatten(pt)
+    
     weight = evaluator["UL-Electron-ID-SF"].evaluate(year, "sf", "Tight", flateta, flatpt)
-
+    
     return ak.unflatten(weight, counts=counts)
 
 
@@ -71,7 +87,16 @@ def get_ele_trig_weight(year, eta, pt):
     corr = convert.from_uproot_THx(ele_trig_hists[year])
     evaluator = corr.to_evaluator()
 
-    return evaluator.evaluate(eta, pt)
+    eta = ak.fill_none(eta, 0.)
+    pt = ak.fill_none(pt, 40.)
+    pt  = ak.where((pt>250.),ak.full_like(pt,250.),pt)
+
+    weight = ak.where(
+        ~np.isnan(ak.fill_none(pt, np.nan)),
+        evaluator.evaluate(eta, pt),
+        ak.zeros_like(pt)
+    )
+    return weight
 
 ####
 # Electron Reco scale factor
@@ -89,8 +114,17 @@ def get_ele_reco_sf_below20(year, eta, pt):
 
     corr = convert.from_uproot_THx(ele_reco_files_below20[year])
     evaluator = corr.to_evaluator()
-
-    return evaluator.evaluate(eta, pt)
+    
+    eta = ak.where((eta>2.399), ak.full_like(eta,2.399), eta)
+    eta = ak.where((eta<2.399), ak.full_like(eta,-2.399), eta)
+    flateta, counts = ak.flatten(eta), ak.num(eta)
+    
+    pt = ak.where((pt<10.), ak.full_like(pt,10.), pt)
+    pt = ak.where((pt>19.99), ak.full_like(pt,19.99), pt)
+    flatpt = ak.flatten(pt)
+    
+    weight = evaluator.evaluate(flateta, flatpt)
+    return ak.unflatten(weight, counts=counts)
     #get_ele_reco_err_below20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.variances() ** 0.5, ele_reco_hist.axes)
 
 
@@ -104,8 +138,17 @@ def get_ele_reco_sf_above20(year, eta, pt):
     
     corr = convert.from_uproot_THx(ele_reco_files_above20[year])
     evaluator = corr.to_evaluator()
-
-    return evaluator.evaluate(eta, pt)
+    
+    eta = ak.where((eta>2.399), ak.full_like(eta,2.399), eta)
+    eta = ak.where((eta<2.399), ak.full_like(eta,-2.399), eta)
+    flateta, counts = ak.flatten(eta), ak.num(eta)
+    
+    pt = ak.where((pt<20.), ak.full_like(pt,20.), pt)
+    pt = ak.where((pt>499.99), ak.full_like(pt,499.99), pt)
+    flatpt = ak.flatten(pt)
+    
+    weight = evaluator.evaluate(flateta, flatpt)
+    return ak.unflatten(weight, counts=counts)
     #get_ele_reco_err_above20[year]=lookup_tools.dense_lookup.dense_lookup(ele_reco_hist.variances() ** 0.05, ele_reco_hist.axes)
     
 
@@ -121,7 +164,10 @@ def get_pho_tight_id_sf(year, eta, pt):
     evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/photon.json.gz')
 
     flateta, counts = ak.flatten(eta), ak.num(eta)
+
+    pt  = ak.where((pt<20.),ak.full_like(pt,20.),pt)
     flatpt = ak.flatten(pt)
+    
     weight = evaluator["UL-Photon-ID-SF"].evaluate(year, "sf", "Tight", flateta, flatpt)
 
     return ak.unflatten(weight, counts=counts)
@@ -131,7 +177,10 @@ def get_pho_loose_id_sf(year, eta, pt):
     evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/photon.json.gz')
 
     flateta, counts = ak.flatten(eta), ak.num(eta)
+    
+    pt  = ak.where((pt<20.),ak.full_like(pt,20.),pt)
     flatpt = ak.flatten(pt)
+    
     weight = evaluator["UL-Photon-ID-SF"].evaluate(year, "sf", "Loose", flateta, flatpt)
 
     return ak.unflatten(weight, counts=counts)
@@ -182,28 +231,36 @@ def get_pho_trig_weight(year, pt):
 # /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration
 ####
 
-def get_muon_loose_id_sf (year, eta, pt):
-    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/muon_Z.json.gz')
+def get_mu_loose_id_sf (year, eta, pt):
+    evaluator = correctionlib.CorrectionSet.from_file('data/MuonSF/'+year+'_UL/muon_Z.json.gz')
 
+    eta = ak.where((eta>2.399), ak.full_like(eta,2.399), eta)
     flateta, counts = ak.flatten(eta), ak.num(eta)
+
+    pt  = ak.where((pt<15.),ak.full_like(pt,15.),pt)
     flatpt = ak.flatten(pt)
+    
     if year == '2018':
-        weight = evaluator["NUM_LooseID_DEN_TrackerMuons"].evaluate(year, flateta, flatpt, "sf")
+        weight = evaluator["NUM_LooseID_DEN_TrackerMuons"].evaluate(year+'_UL', flateta, flatpt, "sf")
     else:
-        weight = evaluator["NUM_LooseID_DEN_genTracks"].evaluate(year, flateta, flatpt, "sf")
+        weight = evaluator["NUM_LooseID_DEN_genTracks"].evaluate(year+'_UL', flateta, flatpt, "sf")
 
     return ak.unflatten(weight, counts=counts)
 
-def get_muon_tight_id_sf (year, eta, pt):
-    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/muon_Z.json.gz')
-
+def get_mu_tight_id_sf (year, eta, pt):
+    evaluator = correctionlib.CorrectionSet.from_file('data/MuonSF/'+year+'_UL/muon_Z.json.gz')
+    
+    eta = ak.where((eta>2.399), ak.full_like(eta,2.399), eta)
     flateta, counts = ak.flatten(eta), ak.num(eta)
-    flatpt = ak.flatten(pt)
-    if year == '2018':
-        weight = evaluator["NUM_TightID_DEN_TrackerMuons"].evaluate(year, flateta, flatpt, "sf")
-    else:
-        weight = evaluator["NUM_TightID_DEN_genTracks"].evaluate(year, flateta, flatpt, "sf")
 
+    pt  = ak.where((pt<15.),ak.full_like(pt,15.),pt)
+    flatpt = ak.flatten(pt)
+    
+    if year == '2018':
+        weight = evaluator["NUM_TightID_DEN_TrackerMuons"].evaluate(year+'_UL', flateta, flatpt, "sf")
+    else:
+        weight = evaluator["NUM_TightID_DEN_genTracks"].evaluate(year+'_UL', flateta, flatpt, "sf")
+    
     return ak.unflatten(weight, counts=counts)
 
 
@@ -216,21 +273,29 @@ def get_muon_tight_id_sf (year, eta, pt):
 # /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration
 ####
 
-def get_muon_loose_iso_sf (year, eta, pt):
-    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/muon_Z.json.gz')
+def get_mu_loose_iso_sf (year, eta, pt):
+    evaluator = correctionlib.CorrectionSet.from_file('data/MuonSF/'+year+'_UL/muon_Z.json.gz')
 
+    eta = ak.where((eta>2.399), ak.full_like(eta,2.399), eta)
     flateta, counts = ak.flatten(eta), ak.num(eta)
+
+    pt  = ak.where((pt<15.),ak.full_like(pt,15.),pt)
     flatpt = ak.flatten(pt)
-    weight = evaluator["NUM_LooseRelIso_DEN_LooseID"].evaluate(year, flateta, flatpt, "sf")
+    
+    weight = evaluator["NUM_LooseRelIso_DEN_LooseID"].evaluate(year+'_UL', flateta, flatpt, "sf")
 
     return ak.unflatten(weight, counts=counts)
 
-def get_muon_tight_iso_sf (year, eta, pt):
-    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/muon_Z.json.gz')
+def get_mu_tight_iso_sf (year, eta, pt):
+    evaluator = correctionlib.CorrectionSet.from_file('data/MuonSF/'+year+'_UL/muon_Z.json.gz')
 
+    eta = ak.where((eta>2.399), ak.full_like(eta,2.399), eta)
     flateta, counts = ak.flatten(eta), ak.num(eta)
+
+    pt  = ak.where((pt<15.),ak.full_like(pt,15.),pt)
     flatpt = ak.flatten(pt)
-    weight = evaluator["NUM_TightRelIso_DEN_TightIDandIPCut"].evaluate(year, flateta, flatpt, "sf")
+    
+    weight = evaluator["NUM_TightRelIso_DEN_TightIDandIPCut"].evaluate(year+'_UL', flateta, flatpt, "sf")
 
     return ak.unflatten(weight, counts=counts)
 
@@ -424,11 +489,11 @@ for year in ['2016postVFP', '2016preVFP', '2017','2018']:
     for p in ['dy','w','z','a']:
         get_nnlo_nlo_weight[year][p] = {}
         for cv in correlated_variations:
-            hist=nnlo_file[p][histname[p]+correlated_variations[cv]]
-            get_nnlo_nlo_weight[year][p][cv]=lookup_tools.dense_lookup.dense_lookup(hist.values(), hist.axes)
+            histo=nnlo_file[p][histname[p]+correlated_variations[cv]]
+            get_nnlo_nlo_weight[year][p][cv]=lookup_tools.dense_lookup.dense_lookup(histo.values(), histo.axes)
         for uv in uncorrelated_variations[p]:
-            hist=nnlo_file[p][histname[p]+uncorrelated_variations[p][uv]]
-            get_nnlo_nlo_weight[year][p][uv]=lookup_tools.dense_lookup.dense_lookup(hist.values(), hist.axes)
+            histo=nnlo_file[p][histname[p]+uncorrelated_variations[p][uv]]
+            get_nnlo_nlo_weight[year][p][uv]=lookup_tools.dense_lookup.dense_lookup(histo.values(), histo.axes)
 
 
 
@@ -477,14 +542,12 @@ class BTagCorrector:
 
         btvjson = {}
         btvjson['deepflav'] = {
-            0: correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepJet_incl"],
-            4: correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepJet_comb"],
-            5: correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepJet_comb"],
+            'incl': correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepJet_incl"],
+            'comb': correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepJet_comb"],
         }
         btvjson['deepcsv'] = {
-            0: correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepCSV_incl"],
-            4: correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepCSV_comb"],
-            5: correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepCSV_comb"],
+            'incl': correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepCSV_incl"],
+            'comb': correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepCSV_comb"],
         }
         self.sf = btvjson[tagger]
 
@@ -504,18 +567,26 @@ class BTagCorrector:
         bpass = btag[{"wp": workingpoint, "btag": "pass"}].view()
         ball = btag[{"wp": workingpoint, "btag": sum}].view()
         ball[ball<=0.]=1.
-        nom = bpass / np.maximum(ball, 1.)
-        self.eff = lookup_tools.dense_lookup.dense_lookup(nom, [ax.edges for ax in btag.axes[2:]])
+        ratio = bpass / np.maximum(ball, 1.)
+        nom = hist.Hist(*btag.axes[2:], data=ratio)
+        nom.name = "ratios"  
+        nom.label = "out"
+        self.eff = convert.from_histogram(nom).to_evaluator()
 
     def btag_weight(self, pt, eta, flavor, istag):
+
         abseta = abs(eta)
+        flateta, counts = ak.fill_none(ak.flatten(abseta), 0.), ak.num(abseta)
+
+        pt = ak.where((pt>999.99), ak.full_like(pt,999.99), pt)
+        flatpt =  ak.fill_none(ak.flatten(pt), 30.)
+
+        flatflavor = ak.fill_none(ak.flatten(flavor), 0)
         
         #https://twiki.cern.ch/twiki/bin/viewauth/CMS/BTagSFMethods#1b_Event_reweighting_using_scale
         def P(eff):
-            weight = eff.ones_like()
-            weight[istag] = eff[istag]
-            weight[~istag] = (1 - eff[~istag])
-            return weight.prod()
+            weight = ak.where(istag, eff, 1-eff)
+            return ak.prod(weight, axis=1)
 
         '''
         Correction deepJet_comb has 5 inputs
@@ -526,66 +597,148 @@ class BTagCorrector:
         Input pt (real):
         '''
 
-        bc = flavor > 0
-        light = ~bc
+        eff = ak.where(
+            ~np.isnan(ak.fill_none(pt, np.nan)),
+            ak.unflatten(self.eff.evaluate(flatflavor, flatpt, flateta), counts=counts),
+            ak.zeros_like(pt)
+        )
+        sf_nom = ak.where(
+            (flavor==0),
+            ak.unflatten(self.sf['incl'].evaluate('central',self._wp, ak.full_like(flatflavor, 0.), flateta, flatpt), counts=counts),
+            ak.where(
+                (flavor==4),
+                ak.unflatten(self.sf['comb'].evaluate('central',self._wp, ak.full_like(flatflavor, 4.), flateta, flatpt), counts=counts),
+                ak.unflatten(self.sf['comb'].evaluate('central',self._wp, ak.full_like(flatflavor, 5.), flateta, flatpt), counts=counts)
+            )
+        )
+        sf_bc_up_correlated = ak.where(
+            (flavor==0),
+            ak.unflatten(self.sf['incl'].evaluate('central',self._wp, ak.full_like(flatflavor, 0.), flateta, flatpt), counts=counts),
+            ak.where(
+                (flavor==4),
+                ak.unflatten(self.sf['comb'].evaluate('up_correlated', self._wp, ak.full_like(flatflavor, 4.), flateta, flatpt), counts=counts),
+                ak.unflatten(self.sf['comb'].evaluate('up_correlated', self._wp, ak.full_like(flatflavor, 5.), flateta, flatpt), counts=counts)
+            )
+        )
+        sf_bc_down_correlated = ak.where(
+            (flavor==0),
+            ak.unflatten(self.sf['incl'].evaluate('central',self._wp, ak.full_like(flatflavor, 0.), flateta, flatpt), counts=counts),
+            ak.where(
+                (flavor==4),
+                ak.unflatten(self.sf['comb'].evaluate('down_correlated', self._wp, ak.full_like(flatflavor, 4.), flateta, flatpt), counts=counts),
+                ak.unflatten(self.sf['comb'].evaluate('down_correlated', self._wp, ak.full_like(flatflavor, 4.), flateta, flatpt), counts=counts)
+            )
+        )
+        sf_bc_up_uncorrelated = ak.where(
+            (flavor==0),
+            ak.unflatten(self.sf['incl'].evaluate('central',self._wp, ak.full_like(flatflavor, 0.), flateta, flatpt), counts=counts),
+            ak.where(
+                (flavor==4),
+                ak.unflatten(self.sf['comb'].evaluate('up_uncorrelated', self._wp, ak.full_like(flatflavor, 4.), flateta, flatpt), counts=counts),
+                ak.unflatten(self.sf['comb'].evaluate('up_uncorrelated', self._wp, ak.full_like(flatflavor, 5.), flateta, flatpt), counts=counts)
+            )
+        )
+        sf_bc_down_uncorrelated = ak.where(
+            (flavor==0),
+            ak.unflatten(self.sf['incl'].evaluate('central',self._wp, ak.full_like(flatflavor, 0.), flateta, flatpt), counts=counts),
+            ak.where(
+                (flavor==4),
+                ak.unflatten(self.sf['comb'].evaluate('down_uncorrelated',self._wp, ak.full_like(flatflavor, 4.), flateta, flatpt), counts=counts),
+                ak.unflatten(self.sf['comb'].evaluate('down_uncorrelated',self._wp, ak.full_like(flatflavor, 5.), flateta, flatpt), counts=counts)        
+            )
+        )
+        sf_light_up_correlated = ak.where(
+            (flavor==0),
+            ak.unflatten(self.sf['incl'].evaluate('up_correlated', self._wp, ak.full_like(flatflavor, 0.), flateta, flatpt), counts=counts),
+            ak.where(
+                (flavor==4),
+                ak.unflatten(self.sf['comb'].evaluate('central',self._wp, ak.full_like(flatflavor, 4.), flateta, flatpt), counts=counts),
+                ak.unflatten(self.sf['comb'].evaluate('central',self._wp, ak.full_like(flatflavor, 5.), flateta, flatpt), counts=counts)
+            )
+        )
+        sf_light_down_correlated = ak.where(
+            (flavor==0),
+            ak.unflatten(self.sf['incl'].evaluate('down_correlated', self._wp, ak.full_like(flatflavor, 0.), flateta, flatpt), counts=counts),
+            ak.where(
+                (flavor==4),
+                ak.unflatten(self.sf['comb'].evaluate('central',self._wp, ak.full_like(flatflavor, 4.), flateta, flatpt), counts=counts),
+                ak.unflatten(self.sf['comb'].evaluate('central',self._wp, ak.full_like(flatflavor, 5.), flateta, flatpt), counts=counts)
+            )
+        )
+        sf_light_up_uncorrelated = ak.where(
+            (flavor==0),
+            ak.unflatten(self.sf['incl'].evaluate('up_uncorrelated', self._wp, ak.full_like(flatflavor, 0.), flateta, flatpt), counts=counts),
+            ak.where(
+                (flavor==4),
+                ak.unflatten(self.sf['comb'].evaluate('central',self._wp, ak.full_like(flatflavor, 4.), flateta, flatpt), counts=counts),
+                ak.unflatten(self.sf['comb'].evaluate('central',self._wp, ak.full_like(flatflavor, 5.), flateta, flatpt), counts=counts)
+            )
+        )
+        sf_light_down_uncorrelated = ak.where(
+            (flavor==0),
+            ak.unflatten(self.sf['incl'].evaluate('down_uncorrelated', self._wp, ak.full_like(flatflavor, 0.), flateta, flatpt), counts=counts),
+            ak.where(
+                (flavor==4),
+                ak.unflatten(self.sf['comb'].evaluate('central',self._wp, ak.full_like(flatflavor, 4.), flateta, flatpt), counts=counts),
+                ak.unflatten(self.sf['comb'].evaluate('central',self._wp, ak.full_like(flatflavor, 5.), flateta, flatpt), counts=counts)
+            )
+        )
         
-        eff = self.eff(flavor, pt, abseta)
-        
-        sf_nom = self.sf[flavor].evaluate('central',self._wp, flavor, abseta, pt)
-        
-        bc_sf_up_correlated = pt.ones_like()
-        bc_sf_up_correlated[~bc] = sf_nom[~bc]
-        bc_sf_up_correlated[bc] = self.sf[flavor].evaluate('up_correlated', self._wp, flavor, eta, pt)[bc]
-        
-        bc_sf_down_correlated = pt.ones_like()
-        bc_sf_down_correlated[~bc] = sf_nom[~bc]
-        bc_sf_down_correlated[bc] = self.sf[flavor].evaluate('down_correlated', self._wp, flavor, eta, pt)[bc]
-
-        bc_sf_up_uncorrelated = pt.ones_like()
-        bc_sf_up_uncorrelated[~bc] = sf_nom[~bc]
-        bc_sf_up_uncorrelated[bc] = self.sf[flavor].evaluate('up_uncorrelated', self._wp, flavor, eta, pt)[bc]
-
-        bc_sf_down_uncorrelated = pt.ones_like()
-        bc_sf_down_uncorrelated[~bc] = sf_nom[~bc]
-        bc_sf_down_uncorrelated[bc] = self.sf[flavor].evaluate('down_uncorrelated', self._wp, flavor, eta, pt)[bc]
-
-        light_sf_up_correlated = pt.ones_like()
-        light_sf_up_correlated[~light] = sf_nom[~light]
-        light_sf_up_correlated[light] = self.sf[flavor].evaluate('up_correlated', self._wp, flavor, abseta, pt)[light]
-
-        light_sf_down_correlated = pt.ones_like()
-        light_sf_down_correlated[~light] = sf_nom[~light]
-        light_sf_down_correlated[light] = self.sf[flavor].evaluate('down_correlated', self._wp, flavor, abseta, pt)[light]
-
-        light_sf_up_uncorrelated = pt.ones_like()
-        light_sf_up_uncorrelated[~light] = sf_nom[~light]
-        light_sf_up_uncorrelated[light] = self.sf[flavor].evaluate('up_uncorrelated', self._wp, flavor, abseta, pt)[light]
-
-        light_sf_down_uncorrelated = pt.ones_like()
-        light_sf_down_uncorrelated[~light] = sf_nom[~light]
-        light_sf_down_uncorrelated[light] = self.sf[flavor].evaluate('down_uncorrelated', self._wp, flavor, abseta, pt)[light]
-
-
-
-        eff_data_nom  = np.minimum(1., sf_nom*eff)
-        bc_eff_data_up_correlated   = np.minimum(1., bc_sf_up_correlated*eff)
-        bc_eff_data_down_correlated = np.minimum(1., bc_sf_down_correlated*eff)
-        bc_eff_data_up_uncorrelated   = np.minimum(1., bc_sf_up_uncorrelated*eff)
-        bc_eff_data_down_uncorrelated = np.minimum(1., bc_sf_down_uncorrelated*eff)
-        light_eff_data_up_correlated   = np.minimum(1., light_sf_up_correlated*eff)
-        light_eff_data_down_correlated = np.minimum(1., light_sf_down_correlated*eff)
-        light_eff_data_up_uncorrelated   = np.minimum(1., light_sf_up_uncorrelated*eff)
-        light_eff_data_down_uncorrelated = np.minimum(1., light_sf_down_uncorrelated*eff)
+        eff_data_nom  = ak.where(
+            (sf_nom*eff>1.), 
+            ak.ones_like(eff), 
+            sf_nom*eff
+        )
+        eff_data_bc_up_correlated   = ak.where(
+            (sf_bc_up_correlated*eff>1.), 
+            ak.ones_like(eff), 
+            sf_bc_up_correlated*eff
+        )
+        eff_data_bc_down_correlated = ak.where(
+            (sf_bc_down_correlated*eff>1.), 
+            ak.ones_like(eff), 
+            sf_bc_down_correlated*eff
+        )
+        eff_data_bc_up_uncorrelated = ak.where(
+            (sf_bc_up_uncorrelated*eff>1.), 
+            ak.ones_like(eff), 
+            sf_bc_up_uncorrelated*eff
+        )
+        eff_data_bc_down_uncorrelated = ak.where(
+            (sf_bc_down_uncorrelated*eff>1.), 
+            ak.ones_like(eff), 
+            sf_bc_down_uncorrelated*eff
+        )
+        eff_data_light_up_correlated   = ak.where(
+            (sf_light_up_correlated*eff>1.), 
+            ak.ones_like(eff), 
+            sf_light_up_correlated*eff
+        )
+        eff_data_light_down_correlated = ak.where(
+            (sf_light_down_correlated*eff>1.), 
+            ak.ones_like(eff), 
+            sf_light_down_correlated*eff
+        )
+        eff_data_light_up_uncorrelated = ak.where(
+            (sf_light_up_uncorrelated*eff>1.), 
+            ak.ones_like(eff), 
+            sf_light_up_uncorrelated*eff
+        )
+        eff_data_light_down_uncorrelated = ak.where(
+            (sf_light_down_uncorrelated*eff>1.), 
+            ak.ones_like(eff), 
+            sf_light_down_uncorrelated*eff
+        )
        
         nom = P(eff_data_nom)/P(eff)
-        bc_up_correlated = P(bc_eff_data_up_correlated)/P(eff)
-        bc_down_correlated = P(bc_eff_data_down_correlated)/P(eff)
-        bc_up_uncorrelated = P(bc_eff_data_up_uncorrelated)/P(eff)
-        bc_down_uncorrelated = P(bc_eff_data_down_uncorrelated)/P(eff)
-        light_up_correlated = P(light_eff_data_up_correlated)/P(eff)
-        light_down_correlated = P(light_eff_data_down_correlated)/P(eff)
-        light_up_uncorrelated = P(light_eff_data_up_uncorrelated)/P(eff)
-        light_down_uncorrelated = P(light_eff_data_down_uncorrelated)/P(eff)
+        bc_up_correlated = P(eff_data_bc_up_correlated)/P(eff)
+        bc_down_correlated = P(eff_data_bc_down_correlated)/P(eff)
+        bc_up_uncorrelated = P(eff_data_bc_up_uncorrelated)/P(eff)
+        bc_down_uncorrelated = P(eff_data_bc_down_uncorrelated)/P(eff)
+        light_up_correlated = P(eff_data_light_up_correlated)/P(eff)
+        light_down_correlated = P(eff_data_light_down_correlated)/P(eff)
+        light_up_uncorrelated = P(eff_data_light_up_uncorrelated)/P(eff)
+        light_down_uncorrelated = P(eff_data_light_down_uncorrelated)/P(eff)
         
         return np.nan_to_num(nom, nan=1.), \
         np.nan_to_num(bc_up_correlated, nan=1.), \
@@ -596,54 +749,6 @@ class BTagCorrector:
         np.nan_to_num(light_down_correlated, nan=1.), \
         np.nan_to_num(light_up_uncorrelated, nan=1.), \
         np.nan_to_num(light_down_uncorrelated, nan=1.)
-
-
-get_btag_weight = {
-    'deepflav': {
-        '2016preVFP': {
-            'loose'  : BTagCorrector('deepflav','2016preVFP','loose').btag_weight,
-            'medium' : BTagCorrector('deepflav','2016preVFP','medium').btag_weight,
-            'tight'  : BTagCorrector('deepflav','2016preVFP','tight').btag_weight
-        },
-        '2016postVFP': {
-            'loose'  : BTagCorrector('deepflav','2016postVFP','loose').btag_weight,
-            'medium' : BTagCorrector('deepflav','2016postVFP','medium').btag_weight,
-            'tight'  : BTagCorrector('deepflav','2016postVFP','tight').btag_weight
-        },
-        '2017': {
-            'loose'  : BTagCorrector('deepflav','2017','loose').btag_weight,
-            'medium' : BTagCorrector('deepflav','2017','medium').btag_weight,
-            'tight'  : BTagCorrector('deepflav','2017','tight').btag_weight
-        },
-        '2018': {
-            'loose'  : BTagCorrector('deepflav','2018','loose').btag_weight,
-            'medium' : BTagCorrector('deepflav','2018','medium').btag_weight,
-            'tight'  : BTagCorrector('deepflav','2018','tight').btag_weight
-        }
-    },
-    'deepcsv' : {
-        '2016preVFP': {
-            'loose'  : BTagCorrector('deepcsv','2016preVFP','loose').btag_weight,
-            'medium' : BTagCorrector('deepcsv','2016preVFP','medium').btag_weight,
-            'tight'  : BTagCorrector('deepcsv','2016preVFP','tight').btag_weight
-        },
-        '2016postVFP': {
-            'loose'  : BTagCorrector('deepcsv','2016postVFP','loose').btag_weight,
-            'medium' : BTagCorrector('deepcsv','2016postVFP','medium').btag_weight,
-            'tight'  : BTagCorrector('deepcsv','2016postVFP','tight').btag_weight
-        },
-        '2017': {
-            'loose'  : BTagCorrector('deepcsv','2017','loose').btag_weight,
-            'medium' : BTagCorrector('deepcsv','2017','medium').btag_weight,
-            'tight'  : BTagCorrector('deepcsv','2017','tight').btag_weight
-        },
-        '2018': {
-            'loose'  : BTagCorrector('deepcsv','2018','loose').btag_weight,
-            'medium' : BTagCorrector('deepcsv','2018','medium').btag_weight,
-            'tight'  : BTagCorrector('deepcsv','2018','tight').btag_weight
-        }
-    }
-}
 
 jec_name_map = {
     'JetPt': 'pt',
@@ -898,24 +1003,23 @@ corrections = {
     'get_pho_loose_id_sf':      get_pho_loose_id_sf,
     'get_pho_tight_id_sf':      get_pho_tight_id_sf,
     'get_pho_trig_weight':      get_pho_trig_weight,
-    'get_muon_loose_id_sf':     get_muon_loose_id_sf,
-    'get_muon_tight_id_sf':     get_muon_tight_id_sf,
-    'get_muon_loose_iso_sf':    get_muon_loose_iso_sf,
-    'get_muon_tight_iso_sf':    get_muon_tight_iso_sf,
+    'get_mu_loose_id_sf':       get_mu_loose_id_sf,
+    'get_mu_tight_id_sf':       get_mu_tight_id_sf,
+    'get_mu_loose_iso_sf':      get_mu_loose_iso_sf,
+    'get_mu_tight_iso_sf':      get_mu_tight_iso_sf,
     'get_met_xy_correction':    XY_MET_Correction,
     'get_pu_weight':            get_pu_weight,
     'get_nlo_ewk_weight':       get_nlo_ewk_weight,
     'get_nnlo_nlo_weight':      get_nnlo_nlo_weight,
     'get_ttbar_weight':         get_ttbar_weight,
     'get_msd_corr':             get_msd_corr,
-    'get_btag_weight':          get_btag_weight,
+    'get_btag_weight':          BTagCorrector,
     'get_mu_rochester_sf':      get_mu_rochester_sf,
     'jet_factory':              jet_factory,
     'subjet_factory':           subjet_factory,
-    'fatjet_factory':           fatjet_factory,
+    #'fatjet_factory':           fatjet_factory,
     'met_factory':              met_factory
 }
 
 
 save(corrections, 'data/corrections.coffea')
-

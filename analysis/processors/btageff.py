@@ -8,6 +8,7 @@ from optparse import OptionParser
 import numpy as np
 import awkward as ak
 from coffea.lookup_tools.dense_lookup import dense_lookup
+import gzip
 
 class BTagEfficiency(processor.ProcessorABC):
 
@@ -78,7 +79,7 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
 
 
-    with open('metadata/'+options.metadata+'.json') as fin:
+    with gzip.open('metadata/'+options.metadata+'.json.gz') as fin:
         samplefiles = json.load(fin)
 
     common = load('data/common.coffea')

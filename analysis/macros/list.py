@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 import os
+import sys
 import uproot
 from data.process import *
 from optparse import OptionParser
 import json
+import gzip
 
 parser = OptionParser()
 parser.add_option('-y', '--year', help='year', dest='year')
@@ -12,24 +14,26 @@ parser.add_option('-m', '--metadata', help='metadata', dest='metadata')
 parser.add_option('-p', '--pack', help='pack', dest='pack')
 parser.add_option('-s', '--special', help='special', dest='special')
 parser.add_option('-c', '--custom', action='store_true', dest='custom')
+parser.add_option('-k', '--skip', help='skip', dest='skip')
+parser.add_option('-r', '--remove', action='store_true', dest='remove')
 (options, args) = parser.parse_args()
 
 globalredirect = "root://xrootd-cms.infn.it/"
 campaigns ={}
-campaigns['2016pre'] = '*UL*16*JMENano'
-campaigns['2016post'] = '*UL*16*JMENano'
+campaigns['2016preVFP'] = '*UL*16preVFP*JMENano'
+campaigns['2016postVFP'] = '*UL*16postVFP*JMENano'
 campaigns['2017'] = '*UL*17*JMENano'
 campaigns['2018'] = '*UL*18*JMENano'
 
 eos = "root://dcache-cms-xrootd.desy.de:1094/"
 custom={}
-custom['2016pre'] = ["/store/user/nshadski/customNano",
+custom['2016preVFP'] = ["/store/user/nshadski/customNano",
                  "/store/user/empfeffe/customNano",
                  "/store/user/momolch/customNano",
                  "/store/user/swieland/customNano",
                  "/store/user/mwassmer/customNano"]
 
-custom['2016post'] = ["/store/user/nshadski/customNano",
+custom['2016postVFP'] = ["/store/user/nshadski/customNano",
                  "/store/user/empfeffe/customNano",
                  "/store/user/momolch/customNano",
                  "/store/user/swieland/customNano",
@@ -61,7 +65,7 @@ def find(_list):
          results=os.popen(command).read()
          files.extend(results.split())
      if not any('.root' in _file for _file in files):
-          files=find(files)
+         files=find(files)
      return files
 
 xsections={}
@@ -75,6 +79,18 @@ for k,v in processes.items():
      else:
           xsections[k] = -1
 
+if options.skip:
+     try:
+          os.system('ls '+options.skip)
+     except:
+          sys.exit('File',options.skip,'does not exist')
+          
+     skip = []
+     corrupted = open(options.skip, 'r')
+     for rootfile in corrupted.readlines():
+          skip.append(rootfile.strip().split('store')[1])
+
+removed = []
 datadef = {}
 datasets = []
 for dataset in xsections.keys():
@@ -83,14 +99,12 @@ for dataset in xsections.keys():
      xs = xsections[dataset]
      if options.custom:
           redirect = eos
+          urllist = []
           for folder in custom[options.year]:
                path=folder+'/'+dataset
-               try:
-                    urllist += find([path])
-               except:
-                    urllist = find([path])
-               print(urllist)
-          for url in urllist[:]:
+               urllist += find([path])
+          for url in urllist[:].copy():
+               print(url)
                if options.year not in url:
                     urllist.remove(url)
                     continue
@@ -103,14 +117,20 @@ for dataset in xsections.keys():
                if '.root' not in url: 
                     urllist.remove(url)
                     continue
-               try:
-                    infile = uproot.open(redirect+url)
-               except:
-                    print("File",redirect+url,"is corrupted, removing.")
+               if options.skip and url.split('store')[-1] in skip:
                     urllist.remove(url)
+                    print(url,'found in',options.skip)
                     continue
-               else:
-                    del infile
+               if options.remove:
+                    try:
+                        infile = uproot.open(redirect+url)
+                    except:
+                        print("File",redirect+url,"is corrupted, removing.")
+                        urllist.remove(url)
+                        removed.append(url)
+                        continue
+                    else:
+                        del infile
 
      else:
           redirect = globalredirect
@@ -143,6 +163,12 @@ for dataset in xsections.keys():
                   'xs': xs,
               }
         
-folder = "metadata/"+options.metadata+".json"
-with open(folder, "w") as fout:
+json_output = "metadata/"+options.metadata+".json.gz"
+with gzip.open(json_output, "wt") as fout:
      json.dump(datadef, fout, indent=4)
+     #fp.write("\n")
+
+if options.remove:
+     lists = "data/removed_files.txt"
+     with open(lists, "w") as fout:
+          fout.writelines(removed)

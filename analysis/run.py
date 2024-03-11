@@ -7,7 +7,7 @@ import os
 from optparse import OptionParser
 
 import uproot
-uproot.open.defaults["xrootd_handler"] = uproot.MultithreadedXRootDSource
+#uproot.open.defaults["xrootd_handler"] = uproot.MultithreadedXRootDSource
 
 import numpy as np
 from coffea import processor
@@ -54,6 +54,6 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
     
     processor_instance=load('data/'+options.processor+'.processor')
-    with open("metadata/"+options.metadata+".json") as fin:
+    with gzip.open("metadata/"+options.metadata+".json.gz") as fin:
         samplefiles = json.load(fin)
     run(processor_instance, samplefiles)

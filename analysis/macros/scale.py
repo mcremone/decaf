@@ -137,9 +137,9 @@ def scale(directory):
 
     for key in hists.keys():
         if key=='sumw': continue
-        for dataset in hists[key].keys:
+        for dataset in hists[key].keys():
             if 'MET' in dataset or 'SingleElectron' in dataset or 'SinglePhoton' in dataset or 'EGamma' in dataset or 'BTagMu' in dataset: continue
-            hists[key][dataset] *= 1/scale[d]
+            hists[key][dataset] *= 1/scale[dataset]
     print('Histograms scaled')
 
 
@@ -203,18 +203,27 @@ def scale(directory):
         for process in bkg_map.keys():
             for dataset in hists[key].keys():
                 if not any(d in dataset for d in bkg_map[process]): continue
-                print('Adding',dataset,'to',process)
-                bkg_hists[key][process]+=hists[key][dataset]
+                print('Adding',dataset,'to',process,'for variable',key)
+                try:
+                    bkg_hists[key][process]+=hists[key][dataset]
+                except:
+                    bkg_hists[key][process]=hists[key][dataset]
         for process in data_map.keys():
             for dataset in hists[key].keys():
                 if not any(d in dataset for d in data_map[process]): continue
-                print('Adding',dataset,'to',process)
-                data_hists[key][process]+=hists[key][dataset]
+                print('Adding',dataset,'to',process,'for variable',key)
+                try:
+                    data_hists[key][process]+=hists[key][dataset]
+                except:
+                    data_hists[key][process]=hists[key][dataset]
         for process in sig_map.keys():
             for dataset in hists[key].keys():
                 if not any(d in dataset for d in sig_map[process]): continue
-                print('Adding',dataset,'to',process)
-                sig_hists[key][process]+=hists[key][dataset]
+                print('Adding',dataset,'to',process,'for variable',key)
+                try:
+                    sig_hists[key][process]+=hists[key][dataset]
+                except:
+                    sig_hists[key][process]=hists[key][dataset]
         for signal in sig_hists[key].keys():
             print('Scaling '+ signal +' by xsec '+str(xsec[signal]))
             sig_hists[key] *= xsec[str(signal)]
@@ -226,16 +235,11 @@ def scale(directory):
 if __name__ == '__main__':
     from optparse import OptionParser
     parser = OptionParser()
-    parser.add_option('-f', '--file', help='file', dest='file')
-    parser.add_option('-d', '--directory', help='directory', dest='directory')
+    parser.add_option('-f', '--folder', help='folder', dest='folder')
     (options, args) = parser.parse_args()
 
-    if options.directory: 
-        bkg_hists, sig_hists, data_hists = scale_directory(options.directory)
-        name = options.directory
-    if options.file: 
-        bkg_hists, sig_hists, data_hists = scale_file(options.file)
-        name = options.file.split(".")[0]
+    bkg_hists, sig_hists, data_hists = scale(options.folder)
+    name = options.folder
 
     hists={
         'bkg': bkg_hists,

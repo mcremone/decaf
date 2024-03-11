@@ -19,9 +19,9 @@ if [ "${4}" == "kisti" ]; then
         ls -l /tmp/x509up_u$(id -u)
         /usr/bin/voms-proxy-info -all
     fi
-    xrdcp -s root://cms-xrdr.private.lo:3094//xrd/store/user/$USER/cmssw_11_3_4.tgz .
+    xrdcp -s root://cms-xrdr.private.lo:2094//xrd/store/user/$USER/cmssw_11_3_4.tgz .
     echo "Decaf correctly copied"
-    xrdcp -s root://cms-xrdr.private.lo:3094//xrd/store/user/$USER/pylocal_3_8.tgz .
+    xrdcp -s root://cms-xrdr.private.lo:2094//xrd/store/user/$USER/pylocal_3_8.tgz .
     echo "Python correctly copied"
 else
     xrdcp -s root://cmseos.fnal.gov//store/user/$USER/cmssw_11_3_4.tgz .

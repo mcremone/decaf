@@ -343,8 +343,6 @@ def get_pu_weight(year, trueint):
 # correction_labels = ["metphicorr_pfmet_mc", "metphicorr_puppimet_mc", "metphicorr_pfmet_data", "metphicorr_puppimet_data"]
 
 def XY_MET_Correction(year, npv, run, pt, phi, isData):
-    if '2016' in year:
-        year = '2016'
     
     npv = ak.where((npv>200),ak.full_like(npv,200),npv)
     pt  = ak.where((pt>1000.),ak.full_like(pt,1000.),pt)

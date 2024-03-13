@@ -105,7 +105,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         }
         
         self._TvsQCDwp = {
-            '2016': 0.53,
+            '2016preVFP': 0.53,
+            '2016postVFP': 0.53,
             '2017': 0.61,
             '2018': 0.65
         }

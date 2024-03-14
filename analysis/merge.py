@@ -57,11 +57,8 @@ if __name__ == '__main__':
     parser.add_option('-f', '--folder', help='folder', dest='folder')
     parser.add_option('-v', '--variable', help='variable', dest='variable', default=None)
     parser.add_option('-e', '--exclude', help='exclude', dest='exclude', default=None)
-    parser.add_option('-p', '--postprocess', action='store_true', dest='postprocess')
     (options, args) = parser.parse_args()
 
     patch_mp_connection_bpo_17560()    
-    if options.postprocess:
-         postprocess(options.folder)
-    else:
-         merge(options.folder,options.variable,options.exclude)
+    merge(options.folder,options.variable,options.exclude)
+    postprocess(options.folder)

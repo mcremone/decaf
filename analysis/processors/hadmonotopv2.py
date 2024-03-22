@@ -24,9 +24,10 @@ def update(events, collections):
 class AnalysisProcessor(processor.ProcessorABC):
 
     lumis = { 
-        #Values from https://twiki.cern.ch/twiki/bin/view/CMS/LumiRecommendationsRun2                                                      
-        '2016postVFP': 36.31,
-        '2016preVFP': 36.31,
+        #Values from https://twiki.cern.ch/twiki/bin/view/CMS/LumiRecommendationsRun2    
+        # https://twiki.cern.ch/twiki/bin/viewauth/CMS/PdmVDatasetsUL2016
+        '2016postVFP': 16.8,
+        '2016preVFP': 19.5,
         '2017': 41.48,
         '2018': 59.83
     }
@@ -96,12 +97,12 @@ class AnalysisProcessor(processor.ProcessorABC):
         self._skipJER = False
 
         self._samples = {
-            'sr':('ZJets','WJets','DY','TT','ST','WW','WZ','ZZ','QCD','HToBB','HTobb','MET','TPhiTo2Chi'),
+            'sr':('Z1Jets','Z2Jets','WJets','DY','TT','ST','WW','WZ','ZZ','QCD','HToBB','HTobb','MET','TPhiTo2Chi'),
             'wmcr':('WJets','DY','TT','ST','WW','WZ','ZZ','QCD','HToBB','HTobb','MET'),
             'tmcr':('WJets','DY','TT','ST','WW','WZ','ZZ','QCD','HToBB','HTobb','MET'),
             'wecr':('WJets','DY','TT','ST','WW','WZ','ZZ','QCD','HToBB','HTobb','SingleElectron','EGamma'),
             'tecr':('WJets','DY','TT','ST','WW','WZ','ZZ','QCD','HToBB','HTobb','SingleElectron','EGamma'),
-            'qcdcr':('ZJets','WJets','TT','ST','WW','WZ','ZZ','QCD','MET'),
+            'qcdcr':('Z1Jets','Z2Jets','WJets','TT','ST','WW','WZ','ZZ','QCD','MET'),
         }
         
         self._TvsQCDwp = {
@@ -668,21 +669,29 @@ class AnalysisProcessor(processor.ProcessorABC):
                 nlo_qcd = get_nlo_qcd_weight['w'](genWs.pt.max())
                 nlo_ewk = get_nlo_ewk_weight['w'](genWs.pt.max())
                 for systematic in get_nnlo_nlo_weight['w']:
-                    nnlo_nlo[systematic] = get_nnlo_nlo_weight['w'][systematic](genWs.pt.max())*((ak.num(genWs, axis=1)>0)&(genWs.pt.max()>=100)) + \
-                                           (~((ak.num(genWs, axis=1)>0)&(genWs.pt.max()>=100))).astype(np.int)
+                    nnlo_nlo[systematic] = ak.where(
+                        ((ak.num(genWs, axis=1)>0)&(ak.firsts(genWs).pt>=100)),
+                        get_nnlo_nlo_weight['w'][systematic](ak.firsts(genWs).pt),
+                        np.ones(len(events), dtype='float')
+                    )
             elif('DY' in dataset): 
                 nlo_qcd = get_nlo_qcd_weight['dy'](genDYs.pt.max())
                 nlo_ewk = get_nlo_ewk_weight['dy'](genDYs.pt.max())
                 for systematic in get_nnlo_nlo_weight['dy']:
-                    nnlo_nlo[systematic] = get_nnlo_nlo_weight['dy'][systematic](genDYs.pt.max())*((ak.num(genDYs, axis=1)>0)&(genDYs.pt.max()>=100)) + \
-                                           (~((ak.num(genDYs, axis=1)>0)&(genDYs.pt.max()>=100))).astype(np.int)
-            elif('ZJets' in dataset): 
+                    nnlo_nlo[systematic] = ak.where(
+                        ((ak.num(genDYs, axis=1)>0)&(ak.firsts(genDYs).pt>=100)),
+                        get_nnlo_nlo_weight['dy'][systematic](ak.firsts(genDYs).pt),
+                        np.ones(len(events), dtype='float')
+                    )
+            elif('Z1Jets' in dataset or 'Z2Jets' in dataset): 
                 nlo_qcd = get_nlo_qcd_weight['z'](genZs.pt.max())
                 nlo_ewk = get_nlo_ewk_weight['z'](genZs.pt.max())
                 for systematic in get_nnlo_nlo_weight['z']:
-                    nnlo_nlo[systematic] = get_nnlo_nlo_weight['z'][systematic](genZs.pt.max())*((ak.num(genZs, axis=1)>0)&(genZs.pt.max()>=100)) + \
-                                           (~((ak.num(genZs, axis=1)>0)&(genZs.pt.max()>=100))).astype(np.int)
-
+                    nnlo_nlo[systematic] = ak.where(
+                        ((ak.num(genZs, axis=1)>0)&(ak.firsts(genZs).pt>=100)),
+                        get_nnlo_nlo_weight['z'][systematic](ak.firsts(genZs).pt),
+                        np.ones(len(events), dtype='float')
+                    )
             ###
             # Calculate PU weight and systematic variations
             ###

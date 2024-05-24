@@ -6,6 +6,7 @@ from data.process import *
 from optparse import OptionParser
 import json
 import gzip
+process_module_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 
 parser = OptionParser()
 parser.add_option('-y', '--year', help='year', dest='year')

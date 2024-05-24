@@ -141,7 +141,7 @@ for dataset in xsections.keys():
      else:
           redirect = globalredirect
           print("Searching for",dataset,"in centrally produced NanoAOD")
-          query="dasgoclient --query=\"dataset dataset=/"+dataset+"/"+campaigns[options.year]+"*/NANOAOD*\""
+          query="dasgoclient --query=\"dataset=/"+dataset+"/"+campaigns[options.year]+"*/NANOAOD*\""
           print(query)
           dataset=os.popen(query).read().split("\n")[0]
           print('Dataset is:', dataset)

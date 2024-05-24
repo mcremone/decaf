@@ -2,11 +2,16 @@
 import os
 import sys
 import uproot
-from data.process import *
 from optparse import OptionParser
 import json
 import gzip
+
 process_module_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
+
+if process_module_path not in sys.path:
+    sys.path.append(process_module_path)
+from process import *
+
 
 parser = OptionParser()
 parser.add_option('-y', '--year', help='year', dest='year')

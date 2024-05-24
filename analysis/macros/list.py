@@ -146,6 +146,7 @@ for dataset in xsections.keys():
           dataset=os.popen(query).read().split("\n")[0]
           print('Dataset is:', dataset)
           query="dasgoclient --query=\"file dataset="+dataset+"\""
+          print(query)
           urllist = os.popen(query).read().split("\n")
      for url in urllist[:]:
           urllist[urllist.index(url)]=redirect+url

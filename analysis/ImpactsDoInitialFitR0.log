@@ -1,0 +1,20 @@
+Have POIs: ['Mz2000_mhs130_Mdm1500_r']
+ <<< Combine >>> 
+   Options for Robust Minimizer :: 
+        Tolerance  0.1
+        Strategy   0
+        Type,Algo  Minuit2,Migrad
+>>> method used is MultiDimFit
+>>> random number generator seed is 123456
+Set Default Value of Parameter Mz2000_mhs130_Mdm1500_r To : 0
+SimNLL created with 240 channels, 0 generic constraints, 1428 fast gaussian constraints, 0 fast poisson constraints, 0 fast group constraints, 
+Error: closed range without finding crossing.
+Error: closed range without finding crossing.
+
+ --- MultiDimFit ---
+best fit parameter values and profile-likelihood uncertainties: 
+ Warning - No valid high-error found, will report difference to maximum of range for : Mz2000_mhs130_Mdm1500_r
+ Warning - No valid low-error found, will report difference to minimum of range for : Mz2000_mhs130_Mdm1500_r
+   Mz2000_mhs130_Mdm1500_r :    +0.076   -0.076/+9.924 (68%)
+Done in 274.45 min (cpu), 275.51 min (real)
+>> combine -M MultiDimFit -n _initialFit_R0 --algo singles --redefineSignalPOIs Mz2000_mhs130_Mdm1500_r --robustFit 1 -t -1 -m 125 -d datacards/darkhiggs/darkhiggs_Mz2000_mhs130_Mdm1500.root --setParameters Mz2000_mhs130_Mdm1500_r=0

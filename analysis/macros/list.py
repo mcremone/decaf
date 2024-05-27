@@ -2,10 +2,16 @@
 import os
 import sys
 import uproot
-from data.process import *
 from optparse import OptionParser
 import json
 import gzip
+
+process_module_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
+
+if process_module_path not in sys.path:
+    sys.path.append(process_module_path)
+from process import *
+
 
 parser = OptionParser()
 parser.add_option('-y', '--year', help='year', dest='year')
@@ -20,8 +26,8 @@ parser.add_option('-r', '--remove', action='store_true', dest='remove')
 
 globalredirect = "root://xrootd-cms.infn.it/"
 campaigns ={}
-campaigns['2016preVFP'] = '*UL*16preVFP*JMENano'
-campaigns['2016postVFP'] = '*UL*16postVFP*JMENano'
+campaigns['2016preVFP'] = '*UL16APVJMENano'
+campaigns['2016postVFP'] = '*UL16JMENano'
 campaigns['2017'] = '*UL*17*JMENano'
 campaigns['2018'] = '*UL*18*JMENano'
 
@@ -135,14 +141,16 @@ for dataset in xsections.keys():
      else:
           redirect = globalredirect
           print("Searching for",dataset,"in centrally produced NanoAOD")
-          query="dasgoclient --query=\"dataset dataset=/"+dataset+"/"+campaigns[options.year]+"*/NANOAOD*\""
+          query="dasgoclient --query=\"dataset=/"+dataset+"/"+campaigns[options.year]+"*/NANOAOD*\""
+          print(query)
           dataset=os.popen(query).read().split("\n")[0]
           print('Dataset is:', dataset)
           query="dasgoclient --query=\"file dataset="+dataset+"\""
+          print(query)
           urllist = os.popen(query).read().split("\n")
      for url in urllist[:]:
           urllist[urllist.index(url)]=redirect+url
-     print('list lenght:',len(urllist))
+     print('list length:',len(urllist))
      if options.special:
           for special in options.special.split(','):
               sdataset, spack = special.split(':')

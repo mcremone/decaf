@@ -26,7 +26,7 @@ parser.add_option('-r', '--remove', action='store_true', dest='remove')
 
 globalredirect = "root://xrootd-cms.infn.it/"
 campaigns ={}
-campaigns['2016preVFP'] = 'UL16APVJMENano'
+campaigns['2016preVFP'] = '*UL16APVJMENano'
 campaigns['2016postVFP'] = '*UL16JMENano'
 campaigns['2017'] = '*UL*17*JMENano'
 campaigns['2018'] = '*UL*18*JMENano'
@@ -150,7 +150,7 @@ for dataset in xsections.keys():
           urllist = os.popen(query).read().split("\n")
      for url in urllist[:]:
           urllist[urllist.index(url)]=redirect+url
-     print('list lenght:',len(urllist))
+     print('list length:',len(urllist))
      if options.special:
           for special in options.special.split(','):
               sdataset, spack = special.split(':')

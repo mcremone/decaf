@@ -26,8 +26,8 @@ parser.add_option('-r', '--remove', action='store_true', dest='remove')
 
 globalredirect = "root://xrootd-cms.infn.it/"
 campaigns ={}
-campaigns['2016preVFP'] = '*UL*16preVFP*JMENano'
-campaigns['2016postVFP'] = '*UL*16postVFP*JMENano'
+campaigns['2016preVFP'] = 'UL16APVJMENano'
+campaigns['2016postVFP'] = '*UL16JMENano'
 campaigns['2017'] = '*UL*17*JMENano'
 campaigns['2018'] = '*UL*18*JMENano'
 

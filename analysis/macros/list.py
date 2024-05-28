@@ -26,10 +26,10 @@ parser.add_option('-r', '--remove', action='store_true', dest='remove')
 
 globalredirect = "root://xrootd-cms.infn.it/"
 campaigns ={}
-campaigns['2016preVFP'] = '*UL16APVJMENano'
-campaigns['2016postVFP'] = '*UL16JMENano'
-campaigns['2017'] = '*UL*17*JMENano'
-campaigns['2018'] = '*UL*18*JMENano'
+campaigns['2016preVFP'] = ['*HIPM*UL2016*JMENano*', '*UL16APVJMENano*']
+campaigns['2016postVFP'] = ['*-UL2016*JMENano*', '*UL16JMENano*']
+campaigns['2017'] = ['*UL*17*JMENano*']
+campaigns['2018'] = ['*UL*18*JMENano*']
 
 eos = "root://dcache-cms-xrootd.desy.de:1094/"
 custom={}
@@ -141,35 +141,37 @@ for dataset in xsections.keys():
      else:
           redirect = globalredirect
           print("Searching for",dataset,"in centrally produced NanoAOD")
-          query="dasgoclient --query=\"dataset=/"+dataset+"/"+campaigns[options.year]+"*/NANOAOD*\""
-          print(query)
-          dataset=os.popen(query).read().split("\n")[0]
-          print('Dataset is:', dataset)
-          query="dasgoclient --query=\"file dataset="+dataset+"\""
-          print(query)
-          urllist = os.popen(query).read().split("\n")
-     for url in urllist[:]:
-          urllist[urllist.index(url)]=redirect+url
-     print('list length:',len(urllist))
-     if options.special:
-          for special in options.special.split(','):
-              sdataset, spack = special.split(':')
-              if sdataset in dataset:
-                  print('Packing',spack,'files for dataset',dataset)
-                  urllists = split(urllist, int(spack))
-              else:
-                  print('Packing',int(options.pack),'files for dataset',dataset)
-                  urllists = split(urllist, int(options.pack))
-     else:
-          print('Packing',int(options.pack),'files for dataset',dataset)
-          urllists = split(urllist, int(options.pack))
-     print(len(urllists))
-     if urllist:
-          for i in range(0,len(urllists)) :
-              datadef[dataset+"____"+str(i)+"_"] = {
-                  'files': urllists[i],
-                  'xs': xs,
-              }
+          for search_string in campaigns[options.year]:
+               query="dasgoclient --query=\"dataset=/"+dataset+"/"+search_string+"/NANOAOD*\""
+               dataset_names=os.popen(query).read().split("\n")[:-1]
+               print('Datasets are:', dataset_names)
+               if dataset_names:
+                    for dataset_name in dataset_names:
+                         query="dasgoclient --query=\"file dataset="+dataset_name+"\""
+                         urllist = os.popen(query).read().split("\n")
+                         if urllist:
+                              for url in urllist[:]:
+                                   urllist[urllist.index(url)]=redirect+url
+                              print('list length:',len(urllist))
+                         if options.special:
+                              for special in options.special.split(','):
+                                  sdataset, spack = special.split(':')
+                                  if sdataset in dataset_name:
+                                      print('Packing',spack,'files for dataset',dataset_name)
+                                      urllists = split(urllist, int(spack))
+                                  else:
+                                      print('Packing',int(options.pack),'files for dataset',dataset_name)
+                                      urllists = split(urllist, int(options.pack))
+                         else:
+                              print('Packing',int(options.pack),'files for dataset',dataset_name)
+                              urllists = split(urllist, int(options.pack))
+                         print(len(urllists))
+                         if urllist:
+                              for i in range(0,len(urllists)) :
+                                  datadef[dataset_name+"____"+str(i)+"_"] = {
+                                      'files': urllists[i],
+                                      'xs': xs,
+                                  }
         
 json_output = "metadata/"+options.metadata+".json.gz"
 with gzip.open(json_output, "wt") as fout:

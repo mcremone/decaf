@@ -2,16 +2,10 @@
 import os
 import sys
 import uproot
+from data.process import *
 from optparse import OptionParser
 import json
 import gzip
-
-process_module_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
-
-if process_module_path not in sys.path:
-    sys.path.append(process_module_path)
-from process import *
-
 
 parser = OptionParser()
 parser.add_option('-y', '--year', help='year', dest='year')
@@ -140,38 +134,43 @@ for dataset in xsections.keys():
 
      else:
           redirect = globalredirect
-          print("Searching for",dataset,"in centrally produced NanoAOD")
-          for search_string in campaigns[options.year]:
-               query="dasgoclient --query=\"dataset=/"+dataset+"/"+search_string+"/NANOAOD*\""
-               dataset_names=os.popen(query).read().split("\n")[:-1]
-               print('Datasets are:', dataset_names)
-               if dataset_names:
-                    for dataset_name in dataset_names:
-                         query="dasgoclient --query=\"file dataset="+dataset_name+"\""
-                         urllist = os.popen(query).read().split("\n")
-                         if urllist:
-                              for url in urllist[:]:
-                                   urllist[urllist.index(url)]=redirect+url
-                              print('list length:',len(urllist))
-                         if options.special:
-                              for special in options.special.split(','):
-                                  sdataset, spack = special.split(':')
-                                  if sdataset in dataset_name:
-                                      print('Packing',spack,'files for dataset',dataset_name)
-                                      urllists = split(urllist, int(spack))
-                                  else:
-                                      print('Packing',int(options.pack),'files for dataset',dataset_name)
-                                      urllists = split(urllist, int(options.pack))
-                         else:
-                              print('Packing',int(options.pack),'files for dataset',dataset_name)
-                              urllists = split(urllist, int(options.pack))
-                         print(len(urllists))
-                         if urllist:
-                              for i in range(0,len(urllists)) :
-                                  datadef[dataset_name+"____"+str(i)+"_"] = {
-                                      'files': urllists[i],
-                                      'xs': xs,
-                                  }
+          urllist = []
+          for campaign in campaigns[options.year]:
+              query="dasgoclient --query=\"dataset dataset=/"+dataset+"/"+campaign+"*/NANOAOD*\""
+              pds=os.popen(query).read()
+              if 'ERROR' in pds:
+                   print('Error in query for',dataset,campaign)
+                   continue
+              if not pds: 
+                   print('Empty query for',dataset,campaign)
+                   continue
+              print('Correct query:',query)
+              print('Primary datasets are:',pds.split("\n"))
+              for pd in pds.split("\n"):
+                  query="dasgoclient --query=\"file dataset="+pd+"\""
+                  urllist += os.popen(query).read().split("\n")
+     for url in urllist[:]:
+          urllist[urllist.index(url)]=redirect+url
+     print('list lenght:',len(urllist))
+     if options.special:
+          for special in options.special.split(','):
+              sdataset, spack = special.split(':')
+              if sdataset in dataset:
+                  print('Packing',spack,'files for dataset',dataset)
+                  urllists = split(urllist, int(spack))
+              else:
+                  print('Packing',int(options.pack),'files for dataset',dataset)
+                  urllists = split(urllist, int(options.pack))
+     else:
+          print('Packing',int(options.pack),'files for dataset',dataset)
+          urllists = split(urllist, int(options.pack))
+     print(len(urllists))
+     if urllist:
+          for i in range(0,len(urllists)) :
+              datadef[dataset+"____"+str(i)+"_"] = {
+                  'files': urllists[i],
+                  'xs': xs,
+              }
         
 json_output = "metadata/"+options.metadata+".json.gz"
 with gzip.open(json_output, "wt") as fout:

@@ -135,7 +135,9 @@ class AnalysisProcessor(processor.ProcessorABC):
             ]
         }
 
-        self._singleelectron_triggers = { #2017 and 2018 from monojet, applying dedicated trigger weights
+        self._singleelectron_triggers = { 
+            #Triggers from: https://github.com/rishabhCMS/decaf/blob/new_coffea/analysis/processors/leptonic_new_coffea.py
+            #Trigger efficiency SFs from there as well
             '2016postVFP': [
                 'Ele27_WPTight_Gsf',
                 'Ele105_CaloIdVT_GsfTrkIdT'

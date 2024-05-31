@@ -78,11 +78,12 @@ def get_ele_tight_id_sf (year, eta, pt):
 ####
 
 def get_ele_trig_weight(year, eta, pt):
+    #From Rishabh: https://github.com/rishabhCMS/decaf/tree/new_coffea/analysis/data/trigger_eff_UL/UL_SingleElectron
     ele_trig_hists = {
-        '2016postVFP': "data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016postVFP.root:EGamma_SF2D", #should we change the name of the trigger?
+        '2016postVFP': "data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016postVFP.root:EGamma_SF2D", 
         '2016preVFP' : "data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016preVFP.root:EGamma_SF2D",
-        '2017': "data/ElectronTrigEff/egammaEffi.txt_EGM2D-2017.root:EGamma_SF2D",#monojet measurement for the combined trigger path
-        '2018': "data/ElectronTrigEff/egammaEffi.txt_EGM2D-2018.root:EGamma_SF2D" #approved by egamma group: https://indico.cern.ch/event/924522/
+        '2017': "data/ElectronTrigEff/egammaEffi.txt_EGM2D-2017.root:EGamma_SF2D",
+        '2018': "data/ElectronTrigEff/egammaEffi.txt_EGM2D-2018.root:EGamma_SF2D" 
     }
     corr = convert.from_uproot_THx(ele_trig_hists[year])
     evaluator = corr.to_evaluator()
@@ -101,21 +102,23 @@ def get_ele_trig_weight(year, eta, pt):
 
 
 def get_mu_trig_weight(year, eta, pt):
-    evaluator = correctionlib.CorrectionSet.from_file(f"/data/MuonTrigSF/{year}/{year}_trigger/Efficiencies_muon_generalTracks_Z_Run{year}_UL_SingleMuonTriggers_schemaV2.json")
-
-    flateta, counts = ak.flatten(eta), ak.num(eta)
+    #https://indico.cern.ch/event/1080036/contributions/4542924/attachments/2318322/3947065/210928_ULTriggerSF_kHwang.pdf
+    #Using weights for IsoMuX
+    #Scale factors from (and similar for other years): https://gitlab.cern.ch/cms-muonPOG/muonefficiencies/-/tree/master/Run2/UL/2018/2018_trigger?ref_type=heads
     
+    evaluator = correctionlib.CorrectionSet.from_file('data/MuonTrigEff/'+year+'/Efficiencies_muon_generalTracks_Z_Run'+year+'_UL_SingleMuonTriggers_schemaV2.json')
+
     pt = ak.where(pt < 26, 26, pt) 
     pt = ak.where(pt > 200, 200, pt) 
-    flatpt = ak.flatten(pt)
     
-    trigger_keys = {'2016_preVFP': 'NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight',
-                    '2016_postVFP': 'NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight',
+    trigger_keys = {'2016preVFP': 'NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight',
+                    '2016postVFP': 'NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight',
                     '2017': 'NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight',
                     '2018': 'NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight'}
 
-    weight = evaluator[trigger_keys[year]].evaluate("sf", flateta, flatpt)
-        return ak.unflatten(weight, counts=counts)
+    weight = evaluator[trigger_keys[year]].evaluate(eta, pt, "nominal")
+    #return ak.unflatten(weight, counts=counts)
+    return weight
 
 
 ####
@@ -1037,6 +1040,7 @@ corrections = {
     'get_mu_tight_id_sf':       get_mu_tight_id_sf,
     'get_mu_loose_iso_sf':      get_mu_loose_iso_sf,
     'get_mu_tight_iso_sf':      get_mu_tight_iso_sf,
+    'get_mu_trig_weight':       get_mu_trig_weight,
     'get_met_xy_correction':    XY_MET_Correction,
     'get_pu_weight':            get_pu_weight,
     'get_nlo_ewk_weight':       get_nlo_ewk_weight,

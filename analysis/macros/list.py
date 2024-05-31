@@ -6,6 +6,11 @@ from data.process import *
 from optparse import OptionParser
 import json
 import gzip
+<<<<<<< HEAD
+=======
+from data.process import *
+
+>>>>>>> 186fa86c5a8089d53021bc5389f2d0d97ebb9a0e
 
 parser = OptionParser()
 parser.add_option('-y', '--year', help='year', dest='year')

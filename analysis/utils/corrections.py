@@ -1030,9 +1030,10 @@ corrections = {
     'get_ele_loose_id_sf':      get_ele_loose_id_sf,
     'get_ele_tight_id_sf':      get_ele_tight_id_sf,
     'get_ele_trig_weight':      get_ele_trig_weight,
-    'get_mu_trig_weight':       get_
     'get_ele_reco_sf_below20':  get_ele_reco_sf_below20,
+    #'get_ele_reco_err_below20': get_ele_reco_err_below20,
     'get_ele_reco_sf_above20':  get_ele_reco_sf_above20,
+    #'get_ele_reco_err_above20': get_ele_reco_err_above20,
     'get_pho_loose_id_sf':      get_pho_loose_id_sf,
     'get_pho_tight_id_sf':      get_pho_tight_id_sf,
     'get_pho_trig_weight':      get_pho_trig_weight,

@@ -73,7 +73,7 @@ def isTightMuon(mu):
     return mask
 
 
-def isSoftMuon(mu, year):
+def isSoftMuon(mu):
     
     mask = (mu.pt > 5) & (abs(mu.eta) < 2.4) & mu.tightId & (mu.pfRelIso04_all > 0.15)
     
@@ -142,7 +142,7 @@ def isLoosePhoton(pho):
     return mask&(pho.electronVeto)
 
 
-def isTightPhoton(pho, year):
+def isTightPhoton(pho):
     
     mask = (pho.pt > 230) & (pho.cutBased == 3)
     
@@ -205,13 +205,14 @@ def isSoftAK4(j, year):
         year='2016'
     
     mask = (j.pt > 8) & (abs(j.eta) < 2.4) & ((j.jetId & 2) == 2)
-    if year == "2016":
-        mask &= ((j.pt >= 50) | ((j.puId & 1) == 1))
-    elif year == "2017":
-        mask &= ((j.pt >= 50) | ((j.puId & 4) == 4))
-    elif year == "2018":
-        mask &= ((j.pt >= 50) | ((j.puId & 4) == 4))
-    return mask
+
+    def puId_cut_low_pt(jet_pt):
+            puId = (0.85-0.7)*(jet_pt-30)/(30-8) + 0.85
+            return puId
+
+    mask &= j.puIdDisc > puId_cut_low_pt(j.pt)
+    
+    return isGoodAK4(j, year)|mask
 
 
 ######
@@ -235,6 +236,7 @@ ids["isLooseTau"] = isLooseTau
 ids["isLoosePhoton"] = isLoosePhoton
 ids["isTightPhoton"] = isTightPhoton
 ids["isGoodAK4"] = isGoodAK4
+ids["isSoftAK4"] = isSoftAK4
 ids["isGoodAK15"] = isGoodAK15
 ids["isHEMJet"] = isHEMJet
 save(ids, "data/ids.coffea")

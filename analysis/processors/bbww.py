@@ -340,7 +340,7 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         mu = events.Muon
         
-        mu['isloose'] = isLooseMuon(mu,self._year)
+        mu['isloose'] = isLooseMuon(mu)
         mu['id_sf'] = ak.where(
             mu.isloose, 
             get_mu_loose_id_sf(self._year, abs(mu.eta), mu.pt), 
@@ -351,7 +351,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             get_mu_loose_iso_sf(self._year, abs(mu.eta), mu.pt), 
             ak.ones_like(mu.pt)
         )
-        mu['istight'] = isTightMuon(mu,self._year)
+        mu['istight'] = isTightMuon(mu)
         mu['id_sf'] = ak.where(
             mu.istight, 
             get_mu_tight_id_sf(self._year, abs(mu.eta), mu.pt), 
@@ -385,13 +385,13 @@ class AnalysisProcessor(processor.ProcessorABC):
             get_ele_reco_sf_below20(self._year, e.eta+e.deltaEtaSC, e.pt), 
             get_ele_reco_sf_above20(self._year, e.eta+e.deltaEtaSC, e.pt)
         )
-        e['isloose'] = isLooseElectron(e,self._year)
+        e['isloose'] = isLooseElectron(e)
         e['id_sf'] = ak.where(
             e.isloose,
             get_ele_loose_id_sf(self._year, e.eta+e.deltaEtaSC, e.pt),
             ak.ones_like(e.pt)
         )
-        e['istight'] = isTightElectron(e,self._year)
+        e['istight'] = isTightElectron(e)
         e['id_sf'] = ak.where(
             e.istight,
             get_ele_tight_id_sf(self._year, e.eta+e.deltaEtaSC, e.pt),
@@ -420,7 +420,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             & ak.all(tau.metric_table(e_loose) > 0.4, axis=2)
         )
         
-        tau['isloose']=isLooseTau(tau, self._year)
+        tau['isloose']=isLooseTau(tau)
         tau_clean=tau[tau.isclean]
         tau_loose=tau_clean[tau_clean.isloose]
         tau_ntot=ak.num(tau, axis=1)
@@ -433,11 +433,13 @@ class AnalysisProcessor(processor.ProcessorABC):
             & ak.all(pho.metric_table(e_loose) > 0.5, axis=2)
             & ak.all(pho.metric_table(tau_loose) > 0.5, axis=2)
         )
-        pho['isloose']=isLoosePhoton(pho,self._year)
+        pho['isloose']=isLoosePhoton(pho)
         pho_clean=pho[pho.isclean]
         pho_loose=pho_clean[pho_clean.isloose]
         pho_ntot=ak.num(pho, axis=1)
         pho_nloose=ak.num(pho_loose, axis=1)
+
+        
         j = events.Jet
         j['isgood'] = isGoodAK4(j, self._year)
         j['isHEM'] = isHEMJet(j)

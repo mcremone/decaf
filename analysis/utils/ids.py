@@ -348,7 +348,7 @@ def isGoodAK15(fj):
     jet_id=fj.jetId
     
     mask = (
-        (pt > 160) & (abs(eta) < 2.4) & ((jet_id & 6) == 6)
+        (pt > 160) & (abs(eta) < 2.4) & ((jet_id & 2) == 2)
     )
     return mask
 
@@ -384,17 +384,35 @@ def isGoodAK4(j, year):
     pt=j.pt
     eta=j.eta
     jet_id=j.jetId
+    pu_id=j.puId #https://twiki.cern.ch/twiki/bin/viewauth/CMS/PileupJetIDUL
+    
+    mask = (pt > 30) & (abs(eta) < 2.4) & ((jet_id & 2) == 2)
+    if year == "2016":
+        mask &= ((pt >= 50) | ((pu_id & 1) == 1))
+    elif year == "2017":
+        mask &= ((pt >= 50) | ((pu_id & 4) == 4))
+    elif year == "2018":
+        mask &= ((pt >= 50) | ((pu_id & 4) == 4))
+    return mask
+
+def isSoftAK4(j, year):
+    if '2016' in year:
+        year='2016'
+    
+    pt=j.pt
+    eta=j.eta
+    jet_id=j.jetId
     pu_id=j.puId
     nhf=j.neHEF
     chf=j.chHEF
     
-    mask = (pt > 30) & (abs(eta) < 2.4) & ((jet_id & 6) == 6)
+    mask = (pt > 8) & (abs(eta) < 2.4) & ((jet_id & 6) == 6)
     if year == "2016":
-        mask = ((pt >= 50) & mask) | ((pt < 50) & mask & ((pu_id & 1) == 1)) & (nhf < 0.8) & (chf > 0.1)
+        mask &= ((pt >= 50) | ((pu_id & 1) == 1))
     elif year == "2017":
-        mask = ((pt >= 50) & mask) | ((pt < 50) & mask & ((pu_id & 4) == 4)) & (nhf < 0.8) & (chf > 0.1)
+        mask &= ((pt >= 50) | ((pu_id & 4) == 4))
     elif year == "2018":
-        mask = ((pt >= 50) & mask) | ((pt < 50) & mask & ((pu_id & 4) == 4)) & (nhf < 0.8) & (chf > 0.1)
+        mask &= ((pt >= 50) | ((pu_id & 4) == 4))
     return mask
 
 

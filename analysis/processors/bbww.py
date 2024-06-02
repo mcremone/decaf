@@ -342,6 +342,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         isLooseTau      = self._ids['isLooseTau']      
         isLoosePhoton   = self._ids['isLoosePhoton']   
         isGoodAK4       = self._ids['isGoodAK4']       
+        isSoftAK4       = self._ids['isSoftAK4']
         isHEMJet        = self._ids['isHEMJet']  
               
         
@@ -505,19 +506,25 @@ class AnalysisProcessor(processor.ProcessorABC):
         # Calculate derivatives
         ###
 
-        j_candidates = j_selected[ak.argsort(j_selected.btagPNetQvG, axis=1, ascending=False)]
+        j_candidates = j_clean[ak.argsort(j_clean.particleNetAK4_QvsG, axis=1, ascending=False)]#particleNetAK4_QvsG btagPNetQvG
         j_candidates = j_candidates[:, :4] #consider only the first 4
-        j_candidates = j_candidates[ak.argsort(j_candidates.btagPNetB, axis=1, ascending=False)]
+        j_candidates = j_candidates[ak.argsort(j_candidates.particleNetAK4_B, axis=1, ascending=False)]#particleNetAK4_B btagPNetB
 
-        bb = j_candidates[:, 0] + j_candidates[:, 1]
-        mbb = bb.mass
+        mbb = np.zeros(len(events), dtype='float')
+        if (ak.sum(j_clean, axis=1)>2):
+            bb = j_candidates[:, 0] + j_candidates[:, 1]
+            mbb = bb.mass
 
-        qq = j_candidates[:, -1] + j_candidates[:, -2]
-        mqq = qq.mass
+        mqq = np.zeros(len(events), dtype='float')
+        if (ak.sum(j_clean, axis=1)>2):
+            qq = j_candidates[:, -1] + j_candidates[:, -2]
+            mqq = qq.mass
 
-        j_candidates = j_candidates[:, -2:]
-        j_candidates = j_candidates[ak.argsort(j_candidates.pt, axis=1, ascending=False)]
-        q2pt = j_candidates[:, -1].pt
+        q2pt = np.zeros(len(events), dtype='float')
+        if (ak.sum(j_clean, axis=1)>2):
+            j_candidates = j_candidates[:, -2:]
+            j_candidates = j_candidates[ak.argsort(j_candidates.pt, axis=1, ascending=False)]
+            q2pt = j_candidates[:, -1].pt
 
         def neutrino_pz(l,v):
             m_w = 80.379
@@ -542,7 +549,9 @@ class AnalysisProcessor(processor.ProcessorABC):
             with_name="LorentzVector",
             behavior=vector.behavior,
         )
-        evqq = leading_e + v_e + qq
+        evqq = np.zeros(len(events), dtype='float')
+        if (ak.sum(j_clean, axis=1)>2):
+            evqq = leading_e + v_e + qq
 
         v_m = ak.zip(
             {
@@ -554,7 +563,9 @@ class AnalysisProcessor(processor.ProcessorABC):
             with_name="LorentzVector",
             behavior=vector.behavior,
         )
-        mvqq = leading_mu + v_mu + qq
+        mvqq = np.zeros(len(events), dtype='float')
+        if (ak.sum(j_clean, axis=1)>2):
+            mvqq = leading_mu + v_mu + qq
 
         mlvqq = {
             'esr'  : evqq.mass,
@@ -741,7 +752,7 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         selection.add('isoneE', (e_ntight==1) & (mu_nloose==0) & (pho_nloose==0) & (tau_nloose==0))
         selection.add('isoneM', (mu_ntight==1) & (e_nloose==0) & (pho_nloose==0) & (tau_nloose==0))
-        selection.add('njets',  (j_ngood>2))
+        selection.add('njets',  (j_nclean>2))
         selection.add('nbjets', (j_ndflvM>0))
         selection.add('noHEMj', noHEMj)
         selection.add('noHEMmet', noHEMmet)

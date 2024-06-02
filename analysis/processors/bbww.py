@@ -510,22 +510,27 @@ class AnalysisProcessor(processor.ProcessorABC):
         j_candidates = j_candidates[:, :4] #consider only the first 4
         j_candidates = j_candidates[ak.argsort(j_candidates.particleNetAK4_B, axis=1, ascending=False)]#particleNetAK4_B btagPNetB
 
-        mbb = np.zeros(len(events), dtype='float')
-        if (ak.sum(j_clean, axis=1)>2):
+        try:
             bb = j_candidates[:, 0] + j_candidates[:, 1]
             mbb = bb.mass
+        except:
+            mbb = np.zeros(len(events), dtype='float')
 
-        mqq = np.zeros(len(events), dtype='float')
-        if (ak.sum(j_clean, axis=1)>2):
+        try:
             qq = j_candidates[:, -1] + j_candidates[:, -2]
             mqq = qq.mass
-
-        q2pt = np.zeros(len(events), dtype='float')
+        except:
+            mqq = np.zeros(len(events), dtype='float')
+        
         if (ak.sum(j_clean, axis=1)>2):
-            j_candidates = j_candidates[:, -2:]
-            j_candidates = j_candidates[ak.argsort(j_candidates.pt, axis=1, ascending=False)]
-            q2pt = j_candidates[:, -1].pt
 
+        j_candidates = j_candidates[:, -2:]
+        j_candidates = j_candidates[ak.argsort(j_candidates.pt, axis=1, ascending=False)]
+        try:
+            q2pt = j_candidates[:, -1].pt
+        except
+            q2pt = np.zeros(len(events), dtype='float')
+            
         def neutrino_pz(l,v):
             m_w = 80.379
             m_l = l.mass            
@@ -549,9 +554,11 @@ class AnalysisProcessor(processor.ProcessorABC):
             with_name="LorentzVector",
             behavior=vector.behavior,
         )
-        evqq = np.zeros(len(events), dtype='float')
-        if (ak.sum(j_clean, axis=1)>2):
+        try:
             evqq = leading_e + v_e + qq
+            mevqq = evqq.mass
+        except:
+            evqq = np.zeros(len(events), dtype='float')
 
         v_m = ak.zip(
             {
@@ -563,13 +570,15 @@ class AnalysisProcessor(processor.ProcessorABC):
             with_name="LorentzVector",
             behavior=vector.behavior,
         )
-        mvqq = np.zeros(len(events), dtype='float')
-        if (ak.sum(j_clean, axis=1)>2):
+        try:
             mvqq = leading_mu + v_mu + qq
+            mmvqq = mvqq.mass
+        except:
+            mmvqq = np.zeros(len(events), dtype='float')
 
         mlvqq = {
-            'esr'  : evqq.mass,
-            'msr'  : mvqq.mass
+            'esr'  : mevqq,
+            'msr'  : mmvqq
         }
         
         mT = {

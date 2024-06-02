@@ -613,6 +613,7 @@ class BTagCorrector:
         flateta, counts = ak.fill_none(ak.flatten(abseta), 0.), ak.num(abseta)
 
         pt = ak.where((pt>999.99), ak.full_like(pt,999.99), pt)
+        pt = ak.where((pt<30.), ak.full_like(pt,30.), pt)
         flatpt =  ak.fill_none(ak.flatten(pt), 30.)
 
         flatflavor = ak.fill_none(ak.flatten(flavor), 0)

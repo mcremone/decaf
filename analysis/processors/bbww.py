@@ -522,13 +522,11 @@ class AnalysisProcessor(processor.ProcessorABC):
         except:
             mqq = np.zeros(len(events), dtype='float')
         
-        if (ak.sum(j_clean, axis=1)>2):
-
         j_candidates = j_candidates[:, -2:]
         j_candidates = j_candidates[ak.argsort(j_candidates.pt, axis=1, ascending=False)]
         try:
             q2pt = j_candidates[:, -1].pt
-        except
+        except:
             q2pt = np.zeros(len(events), dtype='float')
             
         def neutrino_pz(l,v):
@@ -537,11 +535,11 @@ class AnalysisProcessor(processor.ProcessorABC):
             A = (l.px*v.px+l.py*v.py) + (m_w**2 - m_l**2)/2
             B = l.energy**2*(v.px**2+v.py**2)
             C = l.energy**2 - l.pz**2
-            discriminant = (2 * A * pz)**2 - 4 * (B - A**2) * C
+            discriminant = (2 * A * l.pz)**2 - 4 * (B - A**2) * C
             # avoiding imaginary solutions
             sqrt_discriminant = ak.where(discriminant >= 0, np.sqrt(discriminant), np.nan)
-            pz_1 = (-2*A*pz + sqrt_discriminant)/(2*C)
-            pz_2 = (-2*A*pz - sqrt_discriminant)/(2*C)
+            pz_1 = (-2*A*l.pz + sqrt_discriminant)/(2*C)
+            pz_2 = (-2*A*l.pz - sqrt_discriminant)/(2*C)
             return ak.where(abs(pz_1) < abs(pz_2), pz_1, pz_2)
 
         v_e = ak.zip(
@@ -558,7 +556,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             evqq = leading_e + v_e + qq
             mevqq = evqq.mass
         except:
-            evqq = np.zeros(len(events), dtype='float')
+            mevqq = np.zeros(len(events), dtype='float')
 
         v_m = ak.zip(
             {

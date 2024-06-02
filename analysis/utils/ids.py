@@ -105,7 +105,7 @@ def isLooseTau(tau):
     try:
         decayModeDMs=tau.decayModeFindingNewDMs
     except:
-        decayModeDMs=~np.isnan(ak.ones_like(pt))
+        decayModeDMs=~np.isnan(ak.ones_like(tau.pt))
 
     mask = (
         (tau.pt > 20)
@@ -134,7 +134,7 @@ def isLoosePhoton(pho):
     
     mask = (
         (pho.pt > 20)
-        & ~(abs(pho.eta) > 1.4442 & abs(pho.eta) < 1.5660)
+        & ~((abs(pho.eta) > 1.4442) & (abs(pho.eta) < 1.5660))
         & (abs(pho.eta) < 2.5)
         & (pho.cutBased >= 1)
     )
@@ -188,30 +188,33 @@ def isGoodAK15(fj):
 
 
 def isGoodAK4(j, year):
+
+    puId_value = 4
     if '2016' in year:
-        year='2016'
+        puId_value =1
     
-    mask = (j.pt > 30) & (abs(j.eta) < 2.4) & ((j.jetId & 2) == 2)
-    if year == "2016":
-        mask &= ((j.pt >= 50) | ((j.puId & 1) == 1))
-    elif year == "2017":
-        mask &= ((j.pt >= 50) | ((j.puId & 4) == 4))
-    elif year == "2018":
-        mask &= ((j.pt >= 50) | ((j.puId & 4) == 4))
+    mask = (
+        (j.pt > 30) 
+        & (abs(j.eta) < 2.4) 
+        & ((j.jetId & 2) == 2)
+        & ((j.pt >= 50) | ((j.puId & puId_value) == puId_value))
+        )
+
     return mask
 
 def isSoftAK4(j, year):
-    if '2016' in year:
-        year='2016'
-    
-    mask = (j.pt > 8) & (abs(j.eta) < 2.4) & ((j.jetId & 2) == 2)
 
     def puId_cut_low_pt(jet_pt):
-            puId = (0.85-0.7)*(jet_pt-30)/(30-8) + 0.85
-            return puId
+        puId = (0.85-0.7)*(jet_pt-30)/(30-8) + 0.85
+        return puId
 
-    mask &= j.puIdDisc > puId_cut_low_pt(j.pt)
-    
+    mask = (
+        (j.pt > 8) 
+        & (abs(j.eta) < 2.4) 
+        & ((j.jetId & 2) == 2)
+        & (j.puIdDisc > puId_cut_low_pt(j.pt))
+        )
+
     return isGoodAK4(j, year)|mask
 
 

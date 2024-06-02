@@ -144,7 +144,11 @@ class AnalysisProcessor(processor.ProcessorABC):
         self._ids = ids
         self._common = common
 
-        ptbins=[30.0, 
+        ptbins=[8.0,
+                15.0,
+                20.0,
+                25.0,
+                30.0, 
                 60.0, 
                 90.0, 
                 120.0, 
@@ -203,12 +207,32 @@ class AnalysisProcessor(processor.ProcessorABC):
             ),
             'njets': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
-                hist.axis.IntCategory([0, 1, 2, 3, 4, 5, 6], name='njets', label='AK4 Number of Jets'),
+                hist.axis.IntCategory([0, 1, 2, 3, 4, 5, 6], name='njets', label='Number of AK4 Jets'),
                 storage=hist.storage.Weight(),
             ),
             'ndflvM': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.IntCategory([0, 1, 2, 3, 4, 5, 6], name='ndflvM', label='AK4 Number of deepFlavor Medium Jets'),
+                storage=hist.storage.Weight(),
+            ),
+            'mbb': hist.Hist(
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(20,0,300, name='mbb', label='Di-b Jet Mass'),
+                storage=hist.storage.Weight(),
+            ),
+            'mqq': hist.Hist(
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(20,0,300, name='mqq', label='Di-q Jet Mass'),
+                storage=hist.storage.Weight(),
+            ),
+            'mlvqq': hist.Hist(
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(20,0,300, name='mlvqq', label='WW Mass'),
+                storage=hist.storage.Weight(),
+            ),
+            'q2pt': hist.Hist(
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Variable(ptbins, name='q2pt', label='Sub-Leading Quark Jet Pt'),
                 storage=hist.storage.Weight(),
             ),
             'mT': hist.Hist(
@@ -442,6 +466,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         
         j = events.Jet
         j['isgood'] = isGoodAK4(j, self._year)
+        j['issoft'] = isSoftAK4(j, self._year)
         j['isHEM'] = isHEMJet(j)
         j['isclean'] = (
             ak.all(j.metric_table(mu_loose) > 0.4, axis=2)
@@ -452,6 +477,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         j['isdflvL'] = (j.btagDeepFlavB>deepflavWPs['loose']) # deep flavour 
         j['isdflvM'] = (j.btagDeepFlavB>deepflavWPs['medium'])
         j['isdflvT'] = (j.btagDeepFlavB>deepflavWPs['tight'])
+        j['isselected'] = (j.issoft&~j.isdflvM)|(j.isgood&j.isdflvM)
         j['T'] = ak.zip( 
             {
                 "r": j.pt,
@@ -461,13 +487,13 @@ class AnalysisProcessor(processor.ProcessorABC):
             behavior=vector.behavior,
         )
         j_good = j[j.isgood]
-        j_clean = j_good[j_good.isclean]
+        j_soft = j[j.issoft]
+        j_selected = j[j.isselected]
+        j_clean = j_selected[j_selected.isclean]
         j_dflvL = j_clean[j_clean.isdflvL]
         j_dflvM = j_clean[j_clean.isdflvM]
         j_dflvT = j_clean[j_clean.isdflvT]
         j_HEM = j[j.isHEM]
-        j_ntot=ak.num(j, axis=1)
-        j_ngood=ak.num(j_good, axis=1)
         j_nclean=ak.num(j_clean, axis=1)
         j_ndflvL=ak.num(j_dflvL, axis=1)
         j_ndflvM=ak.num(j_dflvM, axis=1)
@@ -476,9 +502,65 @@ class AnalysisProcessor(processor.ProcessorABC):
         leading_j = ak.firsts(j_clean)
 
         ###
-        # Calculate recoil and transverse mass
+        # Calculate derivatives
         ###
 
+        j_candidates = j_selected[ak.argsort(j_selected.btagPNetQvG, axis=1, ascending=False)]
+        j_candidates = j_candidates[:, :4] #consider only the first 4
+        j_candidates = j_candidates[ak.argsort(j_candidates.btagPNetB, axis=1, ascending=False)]
+
+        bb = j_candidates[:, 0] + j_candidates[:, 1]
+        mbb = bb.mass
+
+        qq = j_candidates[:, -1] + j_candidates[:, -2]
+        mqq = qq.mass
+
+        j_candidates = j_candidates[:, -2:]
+        j_candidates = j_candidates[ak.argsort(j_candidates.pt, axis=1, ascending=False)]
+        q2pt = j_candidates[:, -1].pt
+
+        def neutrino_pz(l,v):
+            m_w = 80.379
+            m_l = l.mass            
+            A = (l.px*v.px+l.py*v.py) + (m_w**2 - m_l**2)/2
+            B = l.energy**2*(v.px**2+v.py**2)
+            C = l.energy**2 - l.pz**2
+            discriminant = (2 * A * pz)**2 - 4 * (B - A**2) * C
+            # avoiding imaginary solutions
+            sqrt_discriminant = ak.where(discriminant >= 0, np.sqrt(discriminant), np.nan)
+            pz_1 = (-2*A*pz + sqrt_discriminant)/(2*C)
+            pz_2 = (-2*A*pz - sqrt_discriminant)/(2*C)
+            return ak.where(abs(pz_1) < abs(pz_2), pz_1, pz_2)
+
+        v_e = ak.zip(
+            {
+                "x": met.px,
+                "y": met.py,
+                "z": neutrino_pz(leading_e, met),
+                "t": np.sqrt(met.pt**2+neutrino_pz(leading_e, met)**2) ,
+            },
+            with_name="LorentzVector",
+            behavior=vector.behavior,
+        )
+        evqq = leading_e + v_e + qq
+
+        v_m = ak.zip(
+            {
+                "x": met.px,
+                "y": met.py,
+                "z": neutrino_pz(leading_mu, met),
+                "t": np.sqrt(met.pt**2+neutrino_pz(leading_mu, met)**2) ,
+            },
+            with_name="LorentzVector",
+            behavior=vector.behavior,
+        )
+        mvqq = leading_mu + v_mu + qq
+
+        mlvqq = {
+            'esr'  : evqq.mass,
+            'msr'  : mvqq.mass
+        }
+        
         mT = {
             'esr'  : np.sqrt(2*leading_e.pt*met.pt*(1-np.cos(met.delta_phi(leading_e.T)))),
             'msr'  : np.sqrt(2*leading_mu.pt*met.pt*(1-np.cos(met.delta_phi(leading_mu.T))))
@@ -693,7 +775,11 @@ class AnalysisProcessor(processor.ProcessorABC):
                     'j1phi':                  leading_j.phi,
                     'njets':                  j_nclean,
                     'ndflvM':                 j_ndflvL,
-                    'mT':                     mT[region]
+                    'mT':                     mT[region],
+                    'mlvqq':                  mlvqq[region],
+                    'mbb':                    mbb,
+                    'mqq':                    mqq,
+                    'q2pt':                   q2pt
                 }
                 if 'e' in region:
                     variables['l1pt']      = leading_e.pt

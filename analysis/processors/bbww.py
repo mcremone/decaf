@@ -466,19 +466,18 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         
         j = events.Jet
-        j['isgood'] = isGoodAK4(j, self._year)
-        j['issoft'] = isSoftAK4(j, self._year)
-        j['isHEM'] = isHEMJet(j)
         j['isclean'] = (
             ak.all(j.metric_table(mu_loose) > 0.4, axis=2)
             & ak.all(j.metric_table(e_loose) > 0.4, axis=2)
             & ak.all(j.metric_table(tau_loose) > 0.4, axis=2)
             & ak.all(j.metric_table(pho_loose) > 0.4, axis=2)
         )
+        j['isgood'] = isGoodAK4(j, self._year)
+        j['issoft'] = isSoftAK4(j, self._year)
+        j['isHEM'] = isHEMJet(j)
         j['isdflvL'] = (j.btagDeepFlavB>deepflavWPs['loose']) # deep flavour 
         j['isdflvM'] = (j.btagDeepFlavB>deepflavWPs['medium'])
         j['isdflvT'] = (j.btagDeepFlavB>deepflavWPs['tight'])
-        j['isselected'] = (j.issoft&~j.isdflvM)|(j.isgood&j.isdflvM)
         j['T'] = ak.zip( 
             {
                 "r": j.pt,
@@ -487,15 +486,14 @@ class AnalysisProcessor(processor.ProcessorABC):
             with_name="PolarTwoVector",
             behavior=vector.behavior,
         )
-        j_good = j[j.isgood]
-        j_soft = j[j.issoft]
-        j_selected = j[j.isselected]
-        j_clean = j_selected[j_selected.isclean]
-        j_dflvL = j_clean[j_clean.isdflvL]
-        j_dflvM = j_clean[j_clean.isdflvM]
-        j_dflvT = j_clean[j_clean.isdflvT]
+        j_clean = j[j.isclean]
+        j_good = j_clean[j_clean.isgood]
+        j_soft = j_clean[j_clean.issoft]
+        j_dflvL = j_good[j_good.isdflvL]
+        j_dflvM = j_good[j_good.isdflvM]
+        j_dflvT = j_good[j_good.isdflvT]
         j_HEM = j[j.isHEM]
-        j_nclean=ak.num(j_clean, axis=1)
+        j_nsoft=ak.num(j_soft, axis=1)
         j_ndflvL=ak.num(j_dflvL, axis=1)
         j_ndflvM=ak.num(j_dflvM, axis=1)
         j_ndflvT=ak.num(j_dflvT, axis=1)
@@ -506,7 +504,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         # Calculate derivatives
         ###
 
-        j_candidates = j_clean[ak.argsort(j_clean.particleNetAK4_QvsG, axis=1, ascending=False)]#particleNetAK4_QvsG btagPNetQvG
+        j_candidates = j_soft[ak.argsort(j_soft.particleNetAK4_QvsG, axis=1, ascending=False)]#particleNetAK4_QvsG btagPNetQvG
         j_candidates = j_candidates[:, :4] #consider only the first 4
         j_candidates = j_candidates[ak.argsort(j_candidates.particleNetAK4_B, axis=1, ascending=False)]#particleNetAK4_B btagPNetB
 
@@ -684,10 +682,10 @@ class AnalysisProcessor(processor.ProcessorABC):
             btagSFlight_correlatedDown, \
             btagSFlight_uncorrelatedUp, \
             btagSFlight_uncorrelatedDown  = get_btag_weight('deepflav',self._year,'medium').btag_weight(
-                j_clean.pt,
-                j_clean.eta,
-                j_clean.hadronFlavour,
-                j_clean.isdflvM
+                j_good.pt,
+                j_good.eta,
+                j_good.hadronFlavour,
+                j_good.isdflvM
             )
 
             if hasattr(events, "L1PreFiringWeight"): 
@@ -759,7 +757,7 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         selection.add('isoneE', (e_ntight==1) & (mu_nloose==0) & (pho_nloose==0) & (tau_nloose==0))
         selection.add('isoneM', (mu_ntight==1) & (e_nloose==0) & (pho_nloose==0) & (tau_nloose==0))
-        selection.add('njets',  (j_nclean>2))
+        selection.add('njets',  (j_nsoft>2))
         selection.add('nbjets', (j_ndflvM>0))
         selection.add('noHEMj', noHEMj)
         selection.add('noHEMmet', noHEMmet)
@@ -791,7 +789,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                     'j1pt':                   leading_j.pt,
                     'j1eta':                  leading_j.eta,
                     'j1phi':                  leading_j.phi,
-                    'njets':                  j_nclean,
+                    'njets':                  j_nsoft,
                     'ndflvM':                 j_ndflvL,
                     'mT':                     mT[region],
                     'mlvqq':                  mlvqq[region],

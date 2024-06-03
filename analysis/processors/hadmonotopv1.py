@@ -444,7 +444,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         ###
 
         mu = events.Muon
-        mu['isloose'] = isLooseMuon(mu,self._year)
+        mu['isloose'] = isLooseMuon(mu)
         mu['id_sf'] = ak.where(
             mu.isloose, 
             get_mu_loose_id_sf(self._year, abs(mu.eta), mu.pt), 
@@ -455,7 +455,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             get_mu_loose_iso_sf(self._year, abs(mu.eta), mu.pt), 
             ak.ones_like(mu.pt)
         )
-        mu['istight'] = isTightMuon(mu,self._year)
+        mu['istight'] = isTightMuon(mu)
         mu['id_sf'] = ak.where(
             mu.istight, 
             get_mu_tight_id_sf(self._year, abs(mu.eta), mu.pt), 
@@ -496,13 +496,13 @@ class AnalysisProcessor(processor.ProcessorABC):
             get_ele_reco_sf_below20(self._year, e.eta+e.deltaEtaSC, e.pt), 
             get_ele_reco_sf_above20(self._year, e.eta+e.deltaEtaSC, e.pt)
         )
-        e['isloose'] = isLooseElectron(e,self._year)
+        e['isloose'] = isLooseElectron(e)
         e['id_sf'] = ak.where(
             e.isloose,
             get_ele_loose_id_sf(self._year, e.eta+e.deltaEtaSC, e.pt),
             ak.ones_like(e.pt)
         )
-        e['istight'] = isTightElectron(e,self._year)
+        e['istight'] = isTightElectron(e)
         e['id_sf'] = ak.where(
             e.istight,
             get_ele_tight_id_sf(self._year, e.eta+e.deltaEtaSC, e.pt),
@@ -544,8 +544,8 @@ class AnalysisProcessor(processor.ProcessorABC):
             with_name="PolarTwoVector",
             behavior=vector.behavior,
         )
-        pho['isloose']=isLoosePhoton(pho,self._year)
-        pho['istight']=isTightPhoton(pho,self._year)
+        pho['isloose']=isLoosePhoton(pho)
+        pho['istight']=isTightPhoton(pho)
         pho_clean=pho[pho.isclean]
         pho_loose=pho_clean[pho_clean.isloose]
         pho_tight=pho_clean[pho_clean.istight]

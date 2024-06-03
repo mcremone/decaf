@@ -144,7 +144,11 @@ class AnalysisProcessor(processor.ProcessorABC):
         self._ids = ids
         self._common = common
 
-        ptbins=[30.0, 
+        ptbins=[8.0,
+                15.0,
+                20.0,
+                25.0,
+                30.0, 
                 60.0, 
                 90.0, 
                 120.0, 
@@ -203,12 +207,32 @@ class AnalysisProcessor(processor.ProcessorABC):
             ),
             'njets': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
-                hist.axis.IntCategory([0, 1, 2, 3, 4, 5, 6], name='njets', label='AK4 Number of Jets'),
+                hist.axis.IntCategory([0, 1, 2, 3, 4, 5, 6], name='njets', label='Number of AK4 Jets'),
                 storage=hist.storage.Weight(),
             ),
             'ndflvM': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
                 hist.axis.IntCategory([0, 1, 2, 3, 4, 5, 6], name='ndflvM', label='AK4 Number of deepFlavor Medium Jets'),
+                storage=hist.storage.Weight(),
+            ),
+            'mbb': hist.Hist(
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(20,0,300, name='mbb', label='Di-b Jet Mass'),
+                storage=hist.storage.Weight(),
+            ),
+            'mqq': hist.Hist(
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(20,0,300, name='mqq', label='Di-q Jet Mass'),
+                storage=hist.storage.Weight(),
+            ),
+            'mlvqq': hist.Hist(
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(20,0,300, name='mlvqq', label='WW Mass'),
+                storage=hist.storage.Weight(),
+            ),
+            'q2pt': hist.Hist(
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Variable(ptbins, name='q2pt', label='Sub-Leading Quark Jet Pt'),
                 storage=hist.storage.Weight(),
             ),
             'mT': hist.Hist(
@@ -318,6 +342,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         isLooseTau      = self._ids['isLooseTau']      
         isLoosePhoton   = self._ids['isLoosePhoton']   
         isGoodAK4       = self._ids['isGoodAK4']       
+        isSoftAK4       = self._ids['isSoftAK4']
         isHEMJet        = self._ids['isHEMJet']  
               
         
@@ -340,7 +365,7 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         mu = events.Muon
         
-        mu['isloose'] = isLooseMuon(mu,self._year)
+        mu['isloose'] = isLooseMuon(mu)
         mu['id_sf'] = ak.where(
             mu.isloose, 
             get_mu_loose_id_sf(self._year, abs(mu.eta), mu.pt), 
@@ -351,7 +376,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             get_mu_loose_iso_sf(self._year, abs(mu.eta), mu.pt), 
             ak.ones_like(mu.pt)
         )
-        mu['istight'] = isTightMuon(mu,self._year)
+        mu['istight'] = isTightMuon(mu)
         mu['id_sf'] = ak.where(
             mu.istight, 
             get_mu_tight_id_sf(self._year, abs(mu.eta), mu.pt), 
@@ -385,13 +410,13 @@ class AnalysisProcessor(processor.ProcessorABC):
             get_ele_reco_sf_below20(self._year, e.eta+e.deltaEtaSC, e.pt), 
             get_ele_reco_sf_above20(self._year, e.eta+e.deltaEtaSC, e.pt)
         )
-        e['isloose'] = isLooseElectron(e,self._year)
+        e['isloose'] = isLooseElectron(e)
         e['id_sf'] = ak.where(
             e.isloose,
             get_ele_loose_id_sf(self._year, e.eta+e.deltaEtaSC, e.pt),
             ak.ones_like(e.pt)
         )
-        e['istight'] = isTightElectron(e,self._year)
+        e['istight'] = isTightElectron(e)
         e['id_sf'] = ak.where(
             e.istight,
             get_ele_tight_id_sf(self._year, e.eta+e.deltaEtaSC, e.pt),
@@ -420,7 +445,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             & ak.all(tau.metric_table(e_loose) > 0.4, axis=2)
         )
         
-        tau['isloose']=isLooseTau(tau, self._year)
+        tau['isloose']=isLooseTau(tau)
         tau_clean=tau[tau.isclean]
         tau_loose=tau_clean[tau_clean.isloose]
         tau_ntot=ak.num(tau, axis=1)
@@ -433,20 +458,23 @@ class AnalysisProcessor(processor.ProcessorABC):
             & ak.all(pho.metric_table(e_loose) > 0.5, axis=2)
             & ak.all(pho.metric_table(tau_loose) > 0.5, axis=2)
         )
-        pho['isloose']=isLoosePhoton(pho,self._year)
+        pho['isloose']=isLoosePhoton(pho)
         pho_clean=pho[pho.isclean]
         pho_loose=pho_clean[pho_clean.isloose]
         pho_ntot=ak.num(pho, axis=1)
         pho_nloose=ak.num(pho_loose, axis=1)
+
+        
         j = events.Jet
-        j['isgood'] = isGoodAK4(j, self._year)
-        j['isHEM'] = isHEMJet(j)
         j['isclean'] = (
             ak.all(j.metric_table(mu_loose) > 0.4, axis=2)
             & ak.all(j.metric_table(e_loose) > 0.4, axis=2)
             & ak.all(j.metric_table(tau_loose) > 0.4, axis=2)
             & ak.all(j.metric_table(pho_loose) > 0.4, axis=2)
         )
+        j['isgood'] = isGoodAK4(j, self._year)
+        j['issoft'] = isSoftAK4(j, self._year)
+        j['isHEM'] = isHEMJet(j)
         j['isdflvL'] = (j.btagDeepFlavB>deepflavWPs['loose']) # deep flavour 
         j['isdflvM'] = (j.btagDeepFlavB>deepflavWPs['medium'])
         j['isdflvT'] = (j.btagDeepFlavB>deepflavWPs['tight'])
@@ -458,15 +486,14 @@ class AnalysisProcessor(processor.ProcessorABC):
             with_name="PolarTwoVector",
             behavior=vector.behavior,
         )
-        j_good = j[j.isgood]
-        j_clean = j_good[j_good.isclean]
-        j_dflvL = j_clean[j_clean.isdflvL]
-        j_dflvM = j_clean[j_clean.isdflvM]
-        j_dflvT = j_clean[j_clean.isdflvT]
+        j_clean = j[j.isclean]
+        j_good = j_clean[j_clean.isgood]
+        j_soft = j_clean[j_clean.issoft]
+        j_dflvL = j_good[j_good.isdflvL]
+        j_dflvM = j_good[j_good.isdflvM]
+        j_dflvT = j_good[j_good.isdflvT]
         j_HEM = j[j.isHEM]
-        j_ntot=ak.num(j, axis=1)
-        j_ngood=ak.num(j_good, axis=1)
-        j_nclean=ak.num(j_clean, axis=1)
+        j_nsoft=ak.num(j_soft, axis=1)
         j_ndflvL=ak.num(j_dflvL, axis=1)
         j_ndflvM=ak.num(j_dflvM, axis=1)
         j_ndflvT=ak.num(j_dflvT, axis=1)
@@ -474,9 +501,82 @@ class AnalysisProcessor(processor.ProcessorABC):
         leading_j = ak.firsts(j_clean)
 
         ###
-        # Calculate recoil and transverse mass
+        # Calculate derivatives
         ###
 
+        j_candidates = j_soft[ak.argsort(j_soft.particleNetAK4_QvsG, axis=1, ascending=False)]#particleNetAK4_QvsG btagPNetQvG
+        j_candidates = j_candidates[:, :4] #consider only the first 4
+        j_candidates = j_candidates[ak.argsort(j_candidates.particleNetAK4_B, axis=1, ascending=False)]#particleNetAK4_B btagPNetB
+
+        try:
+            bb = j_candidates[:, 0] + j_candidates[:, 1]
+            mbb = bb.mass
+        except:
+            mbb = np.zeros(len(events), dtype='float')
+
+        try:
+            qq = j_candidates[:, -1] + j_candidates[:, -2]
+            mqq = qq.mass
+        except:
+            mqq = np.zeros(len(events), dtype='float')
+        
+        j_candidates = j_candidates[:, -2:]
+        j_candidates = j_candidates[ak.argsort(j_candidates.pt, axis=1, ascending=False)]
+        try:
+            q2pt = j_candidates[:, -1].pt
+        except:
+            q2pt = np.zeros(len(events), dtype='float')
+            
+        def neutrino_pz(l,v):
+            m_w = 80.379
+            m_l = l.mass            
+            A = (l.px*v.px+l.py*v.py) + (m_w**2 - m_l**2)/2
+            B = l.energy**2*(v.px**2+v.py**2)
+            C = l.energy**2 - l.pz**2
+            discriminant = (2 * A * l.pz)**2 - 4 * (B - A**2) * C
+            # avoiding imaginary solutions
+            sqrt_discriminant = ak.where(discriminant >= 0, np.sqrt(discriminant), np.nan)
+            pz_1 = (-2*A*l.pz + sqrt_discriminant)/(2*C)
+            pz_2 = (-2*A*l.pz - sqrt_discriminant)/(2*C)
+            return ak.where(abs(pz_1) < abs(pz_2), pz_1, pz_2)
+
+        v_e = ak.zip(
+            {
+                "x": met.px,
+                "y": met.py,
+                "z": neutrino_pz(leading_e, met),
+                "t": np.sqrt(met.pt**2+neutrino_pz(leading_e, met)**2) ,
+            },
+            with_name="LorentzVector",
+            behavior=vector.behavior,
+        )
+        try:
+            evqq = leading_e + v_e + qq
+            mevqq = evqq.mass
+        except:
+            mevqq = np.zeros(len(events), dtype='float')
+
+        v_m = ak.zip(
+            {
+                "x": met.px,
+                "y": met.py,
+                "z": neutrino_pz(leading_mu, met),
+                "t": np.sqrt(met.pt**2+neutrino_pz(leading_mu, met)**2) ,
+            },
+            with_name="LorentzVector",
+            behavior=vector.behavior,
+        )
+        try:
+            mvqq = leading_mu + v_mu + qq
+            mmvqq = mvqq.mass
+        except:
+            mmvqq = np.zeros(len(events), dtype='float')
+
+        mlvqq = {
+            'esr'  : mevqq,
+            'msr'  : mmvqq
+        }
+        
         mT = {
             'esr'  : np.sqrt(2*leading_e.pt*met.pt*(1-np.cos(met.delta_phi(leading_e.T)))),
             'msr'  : np.sqrt(2*leading_mu.pt*met.pt*(1-np.cos(met.delta_phi(leading_mu.T))))
@@ -582,10 +682,10 @@ class AnalysisProcessor(processor.ProcessorABC):
             btagSFlight_correlatedDown, \
             btagSFlight_uncorrelatedUp, \
             btagSFlight_uncorrelatedDown  = get_btag_weight('deepflav',self._year,'medium').btag_weight(
-                j_clean.pt,
-                j_clean.eta,
-                j_clean.hadronFlavour,
-                j_clean.isdflvM
+                j_good.pt,
+                j_good.eta,
+                j_good.hadronFlavour,
+                j_good.isdflvM
             )
 
             if hasattr(events, "L1PreFiringWeight"): 
@@ -657,7 +757,7 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         selection.add('isoneE', (e_ntight==1) & (mu_nloose==0) & (pho_nloose==0) & (tau_nloose==0))
         selection.add('isoneM', (mu_ntight==1) & (e_nloose==0) & (pho_nloose==0) & (tau_nloose==0))
-        selection.add('njets',  (j_ngood>2))
+        selection.add('njets',  (j_nsoft>2))
         selection.add('nbjets', (j_ndflvM>0))
         selection.add('noHEMj', noHEMj)
         selection.add('noHEMmet', noHEMmet)
@@ -689,9 +789,13 @@ class AnalysisProcessor(processor.ProcessorABC):
                     'j1pt':                   leading_j.pt,
                     'j1eta':                  leading_j.eta,
                     'j1phi':                  leading_j.phi,
-                    'njets':                  j_nclean,
+                    'njets':                  j_nsoft,
                     'ndflvM':                 j_ndflvL,
-                    'mT':                     mT[region]
+                    'mT':                     mT[region],
+                    'mlvqq':                  mlvqq[region],
+                    'mbb':                    mbb,
+                    'mqq':                    mqq,
+                    'q2pt':                   q2pt
                 }
                 if 'e' in region:
                     variables['l1pt']      = leading_e.pt

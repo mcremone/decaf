@@ -215,7 +215,7 @@ def isSoftAK4(j, year):
         & (j.puIdDisc > puId_cut_low_pt(j.pt))
         )
 
-    return isGoodAK4(j, year)|mask
+    return (mask&~(j.pt > 30))|isGoodAK4(j, year)
 
 
 ######

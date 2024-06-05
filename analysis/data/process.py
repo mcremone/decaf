@@ -90,6 +90,7 @@ processes =    {
     'TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8'           :('TTTo2L2Nu', 'MC', 88.3419),
     'TTToHadronic_TuneCP5_13TeV-powheg-pythia8'        :('TTToHadronic', 'MC', 377.9607),
     'TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8'    :('TTToSemiLeptonic', 'MC', 365.4574),
+    'TTToSemiLeptonic_hdampDOWN_TuneCP5_13TeV-powheg-pythia8'    :('TTToSemiLeptonic', 'MC', 365.4574),
 
         # regular dibosons
     'WW_TuneCP5_13TeV-pythia8'     :('WW_TuneCP5_13TeV-pythia8', 'MC', 119.),

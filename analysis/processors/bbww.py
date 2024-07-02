@@ -140,12 +140,13 @@ class AnalysisProcessor(processor.ProcessorABC):
         }
 
 
-        self._corrections = corrections
-        self._ids = ids
-        self._common = common
+        self._corrections = load('data/corrections.coffea')
+        self._ids         = load('data/ids.coffea')
+        self._common      = load('data/common.coffea')
 
-        ptbins=[8.0,
-                15.0,
+    
+
+        ptbins=[15.0,
                 20.0,
                 25.0,
                 30.0, 
@@ -861,14 +862,7 @@ if __name__ == '__main__':
         samplefiles = json.load(fin)
         xsec = {k: v['xs'] for k,v in samplefiles.items()}
 
-    corrections = load('data/corrections.coffea')
-    ids         = load('data/ids.coffea')
-    common      = load('data/common.coffea')
-
     processor_instance=AnalysisProcessor(year=options.year,
-                                         xsec=xsec,
-                                         corrections=corrections,
-                                         ids=ids,
-                                         common=common)
+                                         xsec=xsec)
 
     save(processor_instance, 'data/bbww'+options.name+'.processor')

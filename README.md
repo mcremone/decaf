@@ -2,30 +2,77 @@
 
 # **D**ark matter **E**xperience with the **C**offea **A**nalysis **F**ramework
 
+## Initial Setup
+
+(Note: remember to replace `<USERNAME>` with *your* username if copying commands below)
+
 ---
 
-## Initial Setup
+### LPC Setup
 
 First, log into an LPC node:
 
 ```
-ssh -L 9094:localhost:9094 <USERNAME>@cmslpc-sl7.fnal.gov
+kinit <USERNAME>@FNAL.GOV
+ssh <USERNAME>@cmslpc-el9.fnal.gov
 ```
 
-The command will also start forwarding the port 9094 (or whatever number you choose)to be able to use applications like jupyter once on the cluster. Then move into your `nobackup` area on `uscms_data`:
+The CMSSW version used runs on slc7. You'll need to setup the correct OS environment using [singularity](https://cms-sw.github.io/singularity.html) (more LPC documentation [here](https://uscms.org/uscms_at_work/computing/setup/setup_software.shtml#apptainer)):
 
 ```
-cd /uscms_data/d?/<USERNAME>
+cmssw-el7 -p --bind `readlink $HOME` --bind `readlink -f ${HOME}/nobackup/` --bind /uscms_data --bind /cvmfs -- /bin/bash -l
 ```
 
-where '?' can be [1,2,3]. Install `CMSSW_11_3_4` (Note: `CMSSW 11_3_X` runs on slc7, which can be setup using apptainer on non-slc7 nodes ([see detailed instructions](https://cms-sw.github.io/singularity.html)):
+Install `CMSSW_11_3_4` in your `nobackup` area:
 
 ```
-#cmssw-el7 # uncomment this line if not on an slc7 node
+cd ~/nobackup
+
+# just a suggestion
+mkdir decaf
+cd decaf
+
+source /cvmfs/cms.cern.ch/cmsset_default.sh
 cmsrel CMSSW_11_3_4
 cd CMSSW_11_3_4/src
 cmsenv
 ```
+
+---
+
+### KISTI Setup
+
+First, log into KISTI:
+
+```
+ssh -p 4280 <USERNAME>@ui20.sdfarm.kr
+```
+
+The CMSSW version used runs on slc7. You'll need to setup the correct OS environment using [singularity](https://cms-sw.github.io/singularity.html). On KISTI, this can be done with:
+
+```
+setup_el7
+```
+
+Install CMSSW_11_3_4 on KISTI:
+
+```
+# just a suggestion
+mkdir decaf
+cd decaf
+
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+export SCRAM_ARCH=slc7_amd64_gcc900 # this is set automatically on LPC but not on KISTI
+cmsrel CMSSW_11_3_4
+cd CMSSW_11_3_4/src
+cmsenv
+```
+
+---
+
+### Installing Packages
+
+The rest of the setup should be the same regardless of what cluster you are working on.
 
 Install `combine` ([see detailed instructions](https://cms-analysis.github.io/HiggsAnalysis-CombinedLimit/#installation-instructions)):
 
@@ -42,9 +89,8 @@ Fork this repo on github and clone it into your `CMSSW_11_3_4/src` directory:
 
 ```
 cd $CMSSW_BASE/src
-git clone ttps://github.com/<USERNAME>/decaf.git
+git clone https://github.com/<USERNAME>/decaf.git -b UL
 cd decaf
-git switch UL
 ```
 
 Then, setup the proper dependences:
@@ -53,19 +99,40 @@ Then, setup the proper dependences:
 source setup.sh
 ```
 
-This script installs the necessary packages as user packages (Note: Pip gave errors when running `setup.sh` for the first time, but it seemed to install everything just fine. No errors showed up when running `setup.sh` a second time.). This is a one-time setup. When you log in next just do:
+This script installs the necessary packages as user packages (Note: Pip gave errors when running `setup.sh` for the first time, but it seemed to install everything just fine. No errors showed up when running `setup.sh` a second time.). This is a one-time setup.
+
+## Setup when returning
+
+When you log in after doing all the one time installations, you only need to set up the environments. Consider using aliases, scripts, etc. to make your life easier.
+
+Consider adding this line to your ~/.bashrc or ~/.bash_profile if you haven't done so already rather than sourcing every time:
+```
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+```
+
+Singularity on LPC:
 
 ```
-#cmssw-el7 # uncomment this line if not on an slc7 node
+cmssw-el7 -p --bind `readlink $HOME` --bind `readlink -f ${HOME}/nobackup/` --bind /uscms_data --bind /cvmfs -- /bin/bash -l
+```
+
+Singularity on KISTI:
+
+```
+setup_el7
+```
+
+Then, go to where you installed CMSSW and do:
+
+```
 cd CMSSW_11_3_4/src
 cmsenv
 cd decaf
 source env.sh
 ```
 
-By running this script you will also initialize your grid certificate (Note: `setup.sh` also runs `env.sh`). This requires you to save your grid certificate password in `$HOME/private/$USER.txt`. Alternatively, you can comment this out and initialize it manually every time.
+By running this script you will also initialize your grid certificate (Note: `setup.sh` also runs `env.sh`). This requires you to save your grid certificate password in `$HOME/private/$USER.txt`. Alternatively, you can change this location, or you can comment this out and initialize it manually every time.
 
----
 
 ## Listing Input Files
 
@@ -115,7 +182,6 @@ The `&` option at the end of the command lets it run in the background, and the 
 
 The `nohup` command is useful and recommended for running most scripts, but you may also use tools like `tmux` or `screen`.
 
----
 
 ## Computing MC b-Tagging Efficiencies
 

@@ -28,10 +28,6 @@ Install `CMSSW_11_3_4` in your `nobackup` area:
 ```
 cd ~/nobackup
 
-# just a suggestion
-mkdir decaf
-cd decaf
-
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 cmsrel CMSSW_11_3_4
 cd CMSSW_11_3_4/src
@@ -57,10 +53,6 @@ setup_el7
 Install CMSSW_11_3_4 on KISTI:
 
 ```
-# just a suggestion
-mkdir decaf
-cd decaf
-
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 export SCRAM_ARCH=slc7_amd64_gcc900 # this is set automatically on LPC but not on KISTI
 cmsrel CMSSW_11_3_4

@@ -43,12 +43,12 @@ Error = logs/condor/render/err/$ENV(MODEL)_$(Cluster)_$(Process).stderr
 Log = logs/condor/render/log/$ENV(MODEL)_$(Cluster)_$(Process).log
 TransferOutputRemaps = "$ENV(MODEL).tgz=$ENV(PWD)/datacards/$ENV(MODEL).tgz"
 Arguments = $ENV(MODEL) $ENV(CLUSTER) $ENV(USER)
++ApptainerImage = "/cvmfs/singularity.opensciencegrid.org/cmssw/cms:rhel7"
 accounting_group=group_cms
 JobBatchName = $ENV(MODEL)
 request_memory = 8000
 request_cpus = 16
-Queue 1
-+ApptainerImage = "/cvmfs/singularity.opensciencegrid.org/cmssw/cms:rhel7""""
+Queue 1"""
 
 if options.cluster == 'lpc':
     if options.tar:

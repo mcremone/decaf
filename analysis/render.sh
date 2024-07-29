@@ -7,8 +7,6 @@ echo "System software: `cat /etc/redhat-release`" #Operating System on that node
 echo $(hostname)
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 if [ "${2}" == "kisti" ]; then
-    apptainer shell -B /cvmfs -B /etc/condor -B /cms -B /cms_scratch -B /var/lib/condor /cvmfs/singularity.opensciencegrid.org/opensciencegrid/osgvo-el7:latest
-    source /cvmfs/cms.cern.ch/cmsset_default.sh
     voms-proxy-info -exists
     if [ $? -eq 0 ]; then
         echo "No need to copy"
@@ -19,7 +17,6 @@ if [ "${2}" == "kisti" ]; then
         ls -l /tmp/x509up_u$(id -u)
         voms-proxy-info -all
     fi
-    source /cvmfs/cms.cern.ch/cmsset_default.sh
     xrdcp -s root://cmseos.fnal.gov//store/user/$USER/cmssw.tgz .
     echo "cmssw correctly copied"
     xrdcp -s root://cmseos.fnal.gov//store/user/$USER/py2local.tgz .
@@ -31,7 +28,6 @@ if [ "${2}" == "kisti" ]; then
     export PYTHONWARNINGS="ignore"
     echo "Updated python path: " $PYTHONPATH
 else
-    source /cvmfs/cms.cern.ch/cmsset_default.sh
     xrdcp -s root://cmseos.fnal.gov//store/user/$USER/cmssw.tgz .
     echo "cmssw correctly copied"
     xrdcp -s root://cmseos.fnal.gov//store/user/$USER/py2local.tgz .

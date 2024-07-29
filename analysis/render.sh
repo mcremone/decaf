@@ -5,21 +5,21 @@ echo "Starting job on " `date` #Date/time of start of job
 echo "Running on: `uname -a`" #Condor job is running on this node
 echo "System software: `cat /etc/redhat-release`" #Operating System on that node
 echo $(hostname)
-source /cvmfs/cms.cern.ch/cmsset_default.sh
 
 if [ "${2}" == "kisti" ]; then
+    setup_el7
     env
-    /usr/bin/voms-proxy-info -exists
+    source /cvmfs/cms.cern.ch/cmsset_default.sh
+    voms-proxy-info -exists
     if [ $? -eq 0 ]; then
         echo "No need to copy"
         ls -l /tmp/x509up_u$(id -u)
-        /usr/bin/voms-proxy-info -all
+        voms-proxy-info -all
     else
         cp ./x509up_u* /tmp
         ls -l /tmp/x509up_u$(id -u)
-        /usr/bin/voms-proxy-info -all
+        voms-proxy-info -all
     fi
-    source /cvmfs/cms.cern.ch/cmsset_default.sh
     xrdcp -s root://cmseos.fnal.gov//store/user/$USER/cmssw.tgz .
     echo "cmssw correctly copied"
     xrdcp -s root://cmseos.fnal.gov//store/user/$USER/py2local.tgz .
@@ -45,7 +45,7 @@ else
 fi
 tar -zxvf cmssw.tgz
 rm cmssw.tgz
-setenv SCRAM_ARCH slc7_amd64_gcc700
+export SCRAM_ARCH=slc7_amd64_gcc700
 cd CMSSW_10_2_13/src
 scramv1 b ProjectRename
 eval `scramv1 runtime -sh` # cmsenv is an alias not on the workers

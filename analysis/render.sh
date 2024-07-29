@@ -19,6 +19,7 @@ if [ "${2}" == "kisti" ]; then
         ls -l /tmp/x509up_u$(id -u)
         voms-proxy-info -all
     fi
+    source /cvmfs/cms.cern.ch/cmsset_default.sh
     xrdcp -s root://cmseos.fnal.gov//store/user/$USER/cmssw.tgz .
     echo "cmssw correctly copied"
     xrdcp -s root://cmseos.fnal.gov//store/user/$USER/py2local.tgz .

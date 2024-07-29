@@ -47,7 +47,8 @@ accounting_group=group_cms
 JobBatchName = $ENV(MODEL)
 request_memory = 8000
 request_cpus = 16
-Queue 1"""
+Queue 1
++ApptainerImage = "/cvmfs/singularity.opensciencegrid.org/cmssw/cms:rhel7""""
 
 if options.cluster == 'lpc':
     if options.tar:

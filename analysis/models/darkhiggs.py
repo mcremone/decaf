@@ -977,8 +977,8 @@ def add_crs(year, mass, recoil, model, category):
 
 
 if __name__ == "__main__":
-    if not os.path.exists("datacards"):
-        os.mkdir("datacards")
+    #if not os.path.exists("datacards"):
+    #    os.mkdir("datacards")
     parser = OptionParser()
     parser.add_option("-y", "--year", help="year", dest="year", default="2018")
     parser.add_option("-m", "--mass", help="mass", dest="mass", default="40to300")

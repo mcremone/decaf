@@ -33,7 +33,9 @@ if options.cluster == 'kisti':
         os.system('xrdfs root://cms-xrdr.private.lo:2094/ rm /xrd/store/user/'+os.environ['USER']+'/cmssw.tgz')
         print('cmssw removed')
         os.system('xrdcp -f ../../../../cmssw.tgz root://cms-xrdr.private.lo:2094//xrd/store/user/'+os.environ['USER']+'/cmssw.tgz')
-    jdl = """universe = vanilla
+    jdl = """universe = container
+container_image = /cvmfs/singularity.opensciencegrid.org/opensciencegrid/osgvo-el7:latest
++SingularityBind = "/cvmfs,/cms,/cms_scratch"
 Executable = render.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
@@ -43,7 +45,6 @@ Error = logs/condor/render/err/$ENV(MODEL)_$(Cluster)_$(Process).stderr
 Log = logs/condor/render/log/$ENV(MODEL)_$(Cluster)_$(Process).log
 TransferOutputRemaps = "$ENV(MODEL).tgz=$ENV(PWD)/datacards/$ENV(MODEL).tgz"
 Arguments = $ENV(MODEL) $ENV(CLUSTER) $ENV(USER)
-+ApptainerImage = "/cvmfs/singularity.opensciencegrid.org/cmssw/cms:rhel7"
 accounting_group=group_cms
 JobBatchName = $ENV(MODEL)
 request_memory = 8000

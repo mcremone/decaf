@@ -74,6 +74,9 @@ jdl_file = open("render.submit", "w")
 jdl_file.write(jdl) 
 jdl_file.close() 
 
+if not os.path.exists("datacards"):
+        os.mkdir("datacards")
+    
 for filename in os.listdir('data/models'):
     if '.model' not in filename: continue
     if options.model:

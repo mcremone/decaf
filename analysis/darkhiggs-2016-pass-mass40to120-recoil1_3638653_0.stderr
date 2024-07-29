@@ -1,0 +1,22 @@
+Proxy not found: /tmp/x509up_u556950957 (No such file or directory)
+/var/lib/condor/execute/dir_2184169/render.sh: line 22: xrdcp: command not found
+/var/lib/condor/execute/dir_2184169/render.sh: line 24: xrdcp: command not found
+tar (child): py2local.tgz: Cannot open: No such file or directory
+tar (child): Error is not recoverable: exiting now
+tar: Child returned status 2
+tar: Error is not recoverable: exiting now
+rm: cannot remove 'py2local.tgz': No such file or directory
+find: '/var/lib/condor/execute/dir_2184169/site-packages/': No such file or directory
+tar (child): cmssw.tgz: Cannot open: No such file or directory
+tar (child): Error is not recoverable: exiting now
+tar: Child returned status 2
+tar: Error is not recoverable: exiting now
+rm: cannot remove 'cmssw.tgz': No such file or directory
+/var/lib/condor/execute/dir_2184169/render.sh: line 48: cd: CMSSW_10_2_13/src: No such file or directory
+SCRAM fatal: Unable to locate the top of local release. Please run this command from a SCRAM-based area.
+SCRAM fatal: Unable to locate the top of local release. Please run this command from a SCRAM-based area.
+/var/lib/condor/execute/dir_2184169/render.sh: line 51: cd: decaf/analysis: No such file or directory
+python: can't open file '/var/lib/condor/execute/dir_2184169/render.py': [Errno 2] No such file or directory
+ls: cannot access 'datacards/darkhiggs-2016-pass-mass40to120-recoil1/*': No such file or directory
+tar: datacards/darkhiggs-2016-pass-mass40to120-recoil1/*: Cannot stat: No such file or directory
+tar: Exiting with failure status due to previous errors

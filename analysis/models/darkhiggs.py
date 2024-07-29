@@ -170,7 +170,8 @@ def addBBLiteSyst(channel, epsilon=1e-5, effect_threshold=0.01, threshold=0, inc
                                                              sample.transferfactor, 
                                                              sample.dependentsample, 
                                                              nominal_values=sample.nominal_values, 
-                                                             stat_unc=np.sqrt(etot2)/ntot, 
+                                                             #stat_unc=np.sqrt(etot2)/ntot, 
+                                                             stat_unc=None,
                                                              channel_name=name)
         
     for i in range(first_sample.observable.nbins):
@@ -181,7 +182,7 @@ def addBBLiteSyst(channel, epsilon=1e-5, effect_threshold=0.01, threshold=0, inc
             for sample in channel._samples.values():
                 if sample._sampletype == rl.Sample.SIGNAL:
                     sample_name = None if channel_name is None else channel_name + "_" + sample._name[sample._name.find("_") + 1 :]
-                    sample.autoMCStats(epsilon=epsilon, sample_name=sample_name, bini=i)
+                    #sample.autoMCStats(epsilon=epsilon, sample_name=sample_name, bini=i)
     
             continue
 
@@ -189,7 +190,7 @@ def addBBLiteSyst(channel, epsilon=1e-5, effect_threshold=0.01, threshold=0, inc
         if neff_bb <= threshold:
             for sample in channel._samples.values():
                 sample_name = None if channel_name is None else channel_name + "_" + sample._name[sample._name.find("_") + 1 :]
-                sample.autoMCStats(epsilon=epsilon, sample_name=sample_name, bini=i)
+                #sample.autoMCStats(epsilon=epsilon, sample_name=sample_name, bini=i)
         else:
             effect_up = np.ones_like(first_sample._nominal)
             effect_down = np.ones_like(first_sample._nominal)
@@ -208,7 +209,7 @@ def addBBLiteSyst(channel, epsilon=1e-5, effect_threshold=0.01, threshold=0, inc
                 if sample._nominal[i] <= 1e-5:
                     continue
                 print(sample._name, i, effect, name + "_mcstat_bin%i" % i)
-                sample.setParamEffect(param, effect_up, effect_down)
+                #sample.setParamEffect(param, effect_up, effect_down)
                 
 def addBtagSyst(dictionary, recoil, process, region, templ, category, mass):
     btagUp = template(dictionary, process, "btagSFbc_correlatedUp", recoil, region, category, mass)[0]

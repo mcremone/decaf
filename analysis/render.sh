@@ -7,8 +7,8 @@ echo "System software: `cat /etc/redhat-release`" #Operating System on that node
 echo $(hostname)
 
 if [ "${2}" == "kisti" ]; then
-    setup_el7
     env
+    cmssw-el7
     source /cvmfs/cms.cern.ch/cmsset_default.sh
     voms-proxy-info -exists
     if [ $? -eq 0 ]; then

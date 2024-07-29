@@ -5,9 +5,8 @@ echo "Starting job on " `date` #Date/time of start of job
 echo "Running on: `uname -a`" #Condor job is running on this node
 echo "System software: `cat /etc/redhat-release`" #Operating System on that node
 echo $(hostname)
-
+source /cvmfs/cms.cern.ch/cmsset_default.sh
 if [ "${2}" == "kisti" ]; then
-    env
     cmssw-el7
     source /cvmfs/cms.cern.ch/cmsset_default.sh
     voms-proxy-info -exists

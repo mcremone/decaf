@@ -19,14 +19,6 @@ if [ "${2}" == "kisti" ]; then
     fi
     xrdcp -s root://cms-xrdr.private.lo:2094//xrd/store/user/$USER/cmssw.tgz .
     echo "cmssw correctly copied"
-    xrdcp -s root://cmseos.fnal.gov//store/user/$USER/py2local.tgz .
-    echo "py2local correctly copied"
-    tar -zxvf py2local.tgz
-    rm py2local.tgz
-    export PYTHONPATH=${_CONDOR_SCRATCH_DIR}/site-packages:$PYTHONPATH
-    export PYTHONPATH=$(find ${_CONDOR_SCRATCH_DIR}/site-packages/ -name *.egg |tr '\n' ':')$PYTHONPATH
-    export PYTHONWARNINGS="ignore"
-    echo "Updated python path: " $PYTHONPATH
 else
     xrdcp -s root://cmseos.fnal.gov//store/user/$USER/cmssw.tgz .
     echo "cmssw correctly copied"

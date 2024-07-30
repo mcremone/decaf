@@ -8,16 +8,15 @@ echo $(hostname)
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 
 if [ "${4}" == "kisti" ]; then
-    env
-    /usr/bin/voms-proxy-info -exists
+    voms-proxy-info -exists
     if [ $? -eq 0 ]; then
         echo "No need to copy"
         ls -l /tmp/x509up_u$(id -u)
-        /usr/bin/voms-proxy-info -all
+        voms-proxy-info -all
     else
         cp ./x509up_u* /tmp
         ls -l /tmp/x509up_u$(id -u)
-        /usr/bin/voms-proxy-info -all
+        voms-proxy-info -all
     fi
     xrdcp -s root://cms-xrdr.private.lo:2094//xrd/store/user/$USER/cmssw.tgz .
     echo "cmssw correctly copied"

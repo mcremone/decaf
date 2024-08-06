@@ -1,3 +1,8 @@
+Readme 
+
+
+
+
 <img src="https://user-images.githubusercontent.com/10731328/193421563-cf992d8b-8e5e-4530-9179-7dbd507d2e02.png" width="350"/>
 
 # **D**ark matter **E**xperience with the **C**offea **A**nalysis **F**ramework
@@ -132,29 +137,31 @@ The list of input files for the analyzer can be generated as a JSON file using t
 
 The options for this script are:
 
-- `-d` (`--dataset`)
 
-Select a specific dataset to pack. By default, it will run over all datasets in `process.py`.
+1. **`-d` or `--dataset`**:
+   - Select a specific dataset to pack. By default, it will run over all datasets in `process.py`.
+   - **Usage**: `-d <dataset_name>`
 
-- `-y` (`--year`)
+2. **`-y` or `--year`**:
+   - Data year. Options are `2016pre`, `2016post`, `2017`, and `2018`.
+   - **Usage**: `-y <year>`
 
-Data year. Options are `2016pre`, `2016post`, `2017`, and `2018`.
+3. **`-m` or `--metadata`**:
+   - Name of metadata output file. Output will be saved in `metadata/<NAME>.json`.
+   - **Usage**: `-m <name>`
 
-- `-m` (`--metadata`)
+4. **`-p` or `--pack`**:
+   - Size of file groups. The smaller the number, the more condor jobs will run. The larger the number, the longer each condor job will take. We tend to pick 32, but the decision is mostly arbitrary.
+   - **Usage**: `-p <size>`
 
-Name of metadata output file. Output will be saved in `metadata/<NAME>.json`
+5. **`-s` or `--special`**:
+   - Size of file groups for special datasets. For a specific dataset, use a different size with respect to the one established with `--pack`. The syntax is `-s <DATASET>:<NUMBER>`.
+   - **Usage**: `-s <dataset>:<number>`
 
-- `-p` (`--pack`)
+6. **`-c` or `--custom`**:
+   - Boolean to decide to use public central NanoAODs (if `False`) or private custom NanoAODs (if `True`). Default is `False`.
+   - **Usage**: `-c` (no argument needed)
 
-Size of file groups. The smaller the number, the more condor jobs will run. The larger the number, the longer each condor job will take. We tend to pick `32`, but the decision is mostly arbitrary.
-
-- `-s` (`--special`)
-
-Size of file groups for special datasets. For a specific dataset, use a different size with respect to the one established with `--pack`. The syntax is `-s <DATASET>:<NUMBER>`.
-
-- `-c` (`--custom`)
-
-Boolean to decide to use public central NanoAODs (if `False`) or private custom NanoAODs (if `True`). Default is `False`.
 
 As an example, to generate the JSON file for all 2017 data:
 
@@ -191,18 +198,17 @@ python3 processors/btageff.py -y 2018 -m 2018 -n 2018
 
 The options for this script are:
 
-- `-y` (`--year`)
+1. **`-y` or `--year`**:
+   - Data year. Options are `2016pre`, `2016post`, `2017`, and `2018`.
+   - **Usage**: `-y <year>`
 
-Data year. Options are `2016pre`, `2016post`, `2017`, and `2018`.
+2. **`-m` or `--metadata`**:
+   - Metadata file to be used as input.
+   - **Usage**: `-m <metadata_file>`
 
-- `-m` (`--metadata`)
-
-Metadata file to be used in input.
-
-- `-n` (`--name)
-
-Name of the output processor file. In this case, it will generate a file called `btageff2018.processor` stored in the `data` folder.
-
+3. **`-n` or `--name`**:
+   - Name of the output processor file. In this case, it will generate a file called `btageff2018.processor` stored in the `data` folder.
+   - **Usage**: `-n <output_name>`
 
 To run the processor:
 
@@ -222,19 +228,19 @@ This means an output file with histograms as defined in the btag processor file 
 python3 run_condor.py -p btag2018 -m 2018 -d QCD -c kisti -t -x
 ```
 
-The options for this script are the same as for `run.py`, with the addition of:
+The options for this script are the same as for run.py, with the addition of:
 
-- `-c` (`--cluster`)
+1. **`-c` or `--cluster`**:
+   - Specifies which cluster you are using. Currently supports `lpc` or `kisti`.
+   - **Usage**: `-c <cluster_name>`
 
-Specifies which cluster you are using.  At the moments supports `lpc` or `kisti`.
+2. **`-t` or `--tar`**:
+   - Tars the local python environment and the local CMSSW folder.
+   - **Usage**: `-t` (no argument needed)
 
-- `-t` (`--tar`)
-  
-Tars the local python environment and the local CMSSW folder. 
-
-- `-x` (`--copy`)
-
-Copies these two tarballs to your EOS area. For example, to run the same setup but for a different year you won’t need to tar and copy again. You can simply do: `python run_condor.py -p btag2017 -m 2017 -d QCD -c kisti`
+3. **`-x` or `--copy`**:
+   - Copies these two tarballs to your EOS area. For example, to run the same setup but for a different year you won’t need to tar and copy again. You can simply do: `python run_condor.py -p btag2017 -m 2017 -d QCD -c kisti`
+   - **Usage**: `-x` (no argument needed))
 
 You can check the status of your HTCondor jobs by doing:
 
@@ -250,7 +256,22 @@ python reduce.py -f hists/btag2018
 
 The options of this script are:
 
-TO BE LISTED
+1. **`-f` or `--folder`**:
+   - Specifies the folder to be processed.
+   - **Usage**: `-f <folder_name>`
+
+2. **`-d` or `--dataset`**:
+   - Specifies the dataset(s) to be processed. If not provided, defaults to `None`.
+   - **Usage**: `-d <dataset_name>`
+
+3. **`-e` or `--exclude`**:
+   - Specifies the dataset(s) to be excluded from processing. Defaults to `None`.
+   - **Usage**: `-e <dataset_name>`
+
+4. **`-v` or `--variable`**:
+   - Specifies the variable(s) to be processed. If not provided, defaults to `None`.
+   - **Usage**: `-v <variable_name>`
+  
 
 All the different datasets produced at the previous step will be reduced. A different file for each variable for each reduced dataset will be produced. For example, the command above will produce the following reduced files:
 
@@ -297,7 +318,21 @@ python3 merge.py -f hists/btageff2018
 
 The options of this script are:
 
-TO BE LISTED
+1. **`-f` or `--folder`**:
+   - Specifies the folder to be processed.
+   - **Usage**: `-f <folder_name>`
+
+2. **`-v` or `--variable`**:
+   - Specifies the variable(s) to be processed. If not provided, defaults to `None`, meaning all variables are processed.
+   - **Usage**: `-v <variable_name>`
+
+3. **`-e` or `--exclude`**:
+   - Specifies the variable(s) to be excluded from processing. Defaults to `None`.
+   - **Usage**: `-e <variable_name>`
+
+4. **`-p` or `--postprocess`**:
+   - If specified, performs postprocessing on the merged files.
+   - **Usage**: `-p` (no argument needed)
 
 This command will produce the following files:
 

@@ -3,7 +3,6 @@ executable              = condor_combine_task_step1.sh
 arguments               = $(ifile) $(param) $(path)
 should_transfer_files   = YES
 when_to_transfer_output = ON_EXIT
-TransferOutputRemaps    = "higgsCombine_initialFit_R1_$(param).MultiDimFit.mH125.root=step1_outputs/higgsCombine_initialFit_R1_$(param).MultiDimFit.mH125.root"
 output                  = logs/combine_task.$(ClusterId).$(ProcId).out
 error                   = logs/combine_task.$(ClusterId).$(ProcId).err
 log                     = logs/combine_task.$(ClusterId).log

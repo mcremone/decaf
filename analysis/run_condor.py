@@ -67,7 +67,9 @@ if options.cluster == 'lpc':
     if options.copy:
         os.system('xrdcp -f ../../decaf.tgz root://cmseos.fnal.gov//store/user/'+os.environ['USER']+'/decaf.tgz')
         os.system('xrdcp -f ../../pylocal.tgz root://cmseos.fnal.gov//store/user/'+os.environ['USER']+'/pylocal.tgz')
-    jdl = """universe = vanilla
+    jdl = """universe = container
+container_image = /cvmfs/singularity.opensciencegrid.org/opensciencegrid/osgvo-el7:latest
++SingularityBind = "/cvmfs,/cms,/cms_scratch"
 Executable = run.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT

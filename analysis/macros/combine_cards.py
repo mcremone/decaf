@@ -33,6 +33,7 @@ for card in txt_list:
     binname=filename.split(".")[0].split('/')[len(filename.split(".")[0].split('/'))-1].replace('-','')
     command=command+binname+'='+filename.split('/')[len(filename.split('/'))-1]+' '
 command=command+' > datacards/'+new_folder+'/'+new_folder+'.txt'  
+command=command+' --channel-masks'
 os.system(command)
 os.system('rm *.txt')
 for rootfile in root_list:

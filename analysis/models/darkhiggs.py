@@ -1231,11 +1231,11 @@ if __name__ == "__main__":
     trig_pho = rl.NuisanceParameter("trig_pho" + year, "lnN")
     veto_tau = rl.NuisanceParameter("veto_tau" + year, "lnN")
     jes = rl.NuisanceParameter("CMS_scale_j_" + year, "lnN")
-    met = rl.NuisanceParameter("met" + year, "lnN")
-    btagSFbc_correlated = rl.NuisanceParameter("btagSFbc_correlated", "shape")  # AK4 btag
-    btagSFbc = rl.NuisanceParameter("btagSFbc_" + year, "shape")  # AK4 btag
-    btagSFlight_correlated = rl.NuisanceParameter("btagSFlight_correlated", "shape")  # AK4 btag
-    btagSFlight = rl.NuisanceParameter("btagSFlight_" + year, "shape")  # AK4 btag 
+    met = rl.NuisanceParameter("CMS_scale_met" + year, "lnN")
+    btagSFbc_correlated = rl.NuisanceParameter("CMS_btag_heavy_correlated", "shape")  # AK4 btag
+    btagSFbc = rl.NuisanceParameter("CMS_btag_heavy" + year, "shape")  # AK4 btag
+    btagSFlight_correlated = rl.NuisanceParameter("CMS_btag_light_correlated", "shape")  # AK4 btag
+    btagSFlight = rl.NuisanceParameter("CMS_btag_light" + year, "shape")  # AK4 btag 
     ew1 = rl.NuisanceParameter("ew1", "lnN") #Effects of unknown Sudakov logs
     #ew2G = rl.NuisanceParameter("ew2G", "lnN")
     ew2W = rl.NuisanceParameter("ew2W", "lnN") #Missing NNLO effects for W boson
@@ -1246,7 +1246,7 @@ if __name__ == "__main__":
     mix = rl.NuisanceParameter("mix", "lnN")
     #muF = rl.NuisanceParameter("muF", "lnN")
     #muR = rl.NuisanceParameter("muR", "lnN")
-    qcd1 = rl.NuisanceParameter("QCDscale_V", "lnN")
+    qcd1 = rl.NuisanceParameter("qcd1", "lnN")
     qcd2 = rl.NuisanceParameter("qcd2", "lnN") #pT shape dependence
     qcd3 = rl.NuisanceParameter("qcd3", "lnN") #Process dependence
     #doublebtag = rl.NuisanceParameter("doublebtag_" + year, "shape")

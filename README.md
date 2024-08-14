@@ -6,14 +6,11 @@ Readme
 <img src="https://user-images.githubusercontent.com/10731328/193421563-cf992d8b-8e5e-4530-9179-7dbd507d2e02.png" width="350"/>
 
 # **D**ark matter **E**xperience with the **C**offea **A**nalysis **F**ramework
-<<<<<<< UL
-=======
 
 ## Initial Setup
 
 (Note: remember to replace `<USERNAME>` with *your* username if copying commands below)
 
->>>>>>> UL
 ---
 
 ### LPC Setup

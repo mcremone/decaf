@@ -89,6 +89,12 @@ for i in range(fpf_s.getSize()):
         continue
     elif 'wjets_norm2018pass' in name:
         continue
+    elif 'tt_norm2016pass' in name:
+        continue
+    elif 'tt_norm2017pass' in name:
+        continue
+    elif 'tt_norm2018pass' in name:
+        continue
 
     mean_p, sigma_p = 0,0
     if nuis_p == None:

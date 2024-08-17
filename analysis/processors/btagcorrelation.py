@@ -26,10 +26,10 @@ class BTagEfficiency(processor.ProcessorABC):
                 hist.Cat('dataset', 'Dataset'),
                 hist.Cat('wp', 'Working point'),
                 hist.Cat('btag', 'BTag WP pass/fail'),
+                hist.Cat('doublebtag', 'DBTag WP pass/fail'),
                 hist.Bin('flavor', 'Jet hadronFlavour', [0, 4, 5, 6]),
                 hist.Bin('pt', 'Jet pT', [20, 30, 50, 70, 100, 140, 200, 300, 600, 1000]),
                 hist.Bin('abseta', 'Jet abseta', [0, 1.4, 2.0, 2.5]),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
             ),
             'deepcsv' :
             hist.Hist(
@@ -37,10 +37,10 @@ class BTagEfficiency(processor.ProcessorABC):
                 hist.Cat('dataset', 'Dataset'),
                 hist.Cat('wp', 'Working point'),
                 hist.Cat('btag', 'BTag WP pass/fail'),
+                hist.Cat('doublebtag', 'DBTag WP pass/fail'),
                 hist.Bin('flavor', 'Jet hadronFlavour', [0, 4, 5, 6]),
                 hist.Bin('pt', 'Jet pT', [20, 30, 50, 70, 100, 140, 200, 300, 600, 1000]),
                 hist.Bin('abseta', 'Jet abseta', [0, 1.4, 2.0, 2.5]),
-                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
             )
         })
 
@@ -78,6 +78,7 @@ class BTagEfficiency(processor.ProcessorABC):
 
         out = self.accumulator.identity()
 
+        passdoublebtag = (leading_fj.ZHbbvsQCD.sum() > self._ZHbbvsQCDwp[self._year])
         for wp in ['loose','medium','tight']:
             for tagger in ['deepflav','deepcsv']:
                 passbtag = j_good[name[tagger]] > self._btagWPs[tagger][self._year][wp]
@@ -85,19 +86,41 @@ class BTagEfficiency(processor.ProcessorABC):
                     dataset=dataset,
                     wp=wp,
                     btag='pass',
-                    flavor=j_good[passbtag&(fj_ngood>0)].hadronFlavour.flatten(),
-                    pt=j_good[passbtag&(fj_ngood>0)].pt.flatten(),
-                    abseta=abs(j_good[passbtag&(fj_ngood>0)].eta.flatten()),
-                    ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(),
+                    doublebtag='pass',
+                    flavor=j_good[passbtag].hadronFlavour.flatten(),
+                    pt=j_good[passbtag].pt.flatten(),
+                    abseta=abs(j_good[passbtag].eta.flatten()),
+                    weight=(fj_ngood>0)&passdoublebtag
                 )
                 out[tagger].fill(
                     dataset=dataset,
                     wp=wp,
                     btag='fail',
-                    flavor=j_good[~passbtag&(fj_ngood>0)].hadronFlavour.flatten(),
-                    pt=j_good[~passbtag&(fj_ngood>0)].pt.flatten(),
-                    abseta=abs(j_good[~passbtag&(fj_ngood>0)].eta.flatten()),
-                    ZHbbvsQCD=leading_fj.ZHbbvsQCD.sum(),
+                    doublebtag='pass',
+                    flavor=j_good[~passbtag].hadronFlavour.flatten(),
+                    pt=j_good[~passbtag].pt.flatten(),
+                    abseta=abs(j_good[~passbtag].eta.flatten()),
+                    weight=(fj_ngood>0)&passdoublebtag
+                )
+                out[tagger].fill(
+                    dataset=dataset,
+                    wp=wp,
+                    btag='pass',
+                    doublebtag='fail',
+                    flavor=j_good[passbtag].hadronFlavour.flatten(),
+                    pt=j_good[passbtag].pt.flatten(),
+                    abseta=abs(j_good[passbtag].eta.flatten()),
+                    weight=(fj_ngood>0)&~passdoublebtag
+                )
+                out[tagger].fill(
+                    dataset=dataset,
+                    wp=wp,
+                    btag='fail',
+                    doublebtag='fail',
+                    flavor=j_good[~passbtag].hadronFlavour.flatten(),
+                    pt=j_good[~passbtag].pt.flatten(),
+                    abseta=abs(j_good[~passbtag].eta.flatten()),
+                    weight=(fj_ngood>0)&~passdoublebtag
                 )
         return out
 

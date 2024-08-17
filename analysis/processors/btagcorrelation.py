@@ -115,4 +115,4 @@ if __name__ == '__main__':
     ids    = load('data/ids.coffea')
     processor_instance=BTagEfficiency(year=options.year,wp=common['btagWPs'],ids=ids)
 
-    save(processor_instance, 'data/btageff'+options.name+'.processor')
+    save(processor_instance, 'data/btagcorrelation'+options.name+'.processor')

@@ -72,6 +72,10 @@ class BTagEfficiency(processor.ProcessorABC):
         j['isiso'] = ~match(j,leading_fj,1.5)
         j_good = j[j.isgood.astype(np.bool)]
         j_iso = j_good[j_good.isiso.astype(np.bool)]
+        j_niso = j_iso.counts
+        leading_j = j[j.pt.argmax()]
+        leading_j = leading_j[leading_j.isgood.astype(np.bool)]
+        leading_j = leading_j[leading_j.isiso.astype(np.bool)]
 
         name = {}
         name['deepflav']= 'btagDeepFlavB'
@@ -82,6 +86,7 @@ class BTagEfficiency(processor.ProcessorABC):
         selection.add('passdoublebtag',(leading_fj.ZHbbvsQCD.sum() > self._ZHbbvsQCDwp[self._year]))
         selection.add('faildoublebtag',~(leading_fj.ZHbbvsQCD.sum() > self._ZHbbvsQCDwp[self._year]))
         selection.add('fatjet', (fj_ngood>0))
+        selection.add('isojet', (j_niso>0))
 
         regions = {
             'pass':['fatjet','passdoublebtag'],
@@ -92,15 +97,15 @@ class BTagEfficiency(processor.ProcessorABC):
             cut = selection.all(*regions[region])
             for wp in ['loose','medium','tight']:
                 for tagger in ['deepflav','deepcsv']:
-                    passbtag = j_good[name[tagger]] > self._btagWPs[tagger][self._year][wp]
+                    passbtag = leading_j[name[tagger]] > self._btagWPs[tagger][self._year][wp]
                     out[tagger].fill(
                         dataset=dataset,
                         wp=wp,
                         btag='pass',
                         doublebtag=region,
-                        flavor=j_good[passbtag].hadronFlavour.flatten(),
-                        pt=j_good[passbtag].pt.flatten(),
-                        abseta=abs(j_good[passbtag].eta.flatten()),
+                        flavor=leading_j[passbtag].hadronFlavour.sum(),
+                        pt=leading_j[passbtag].pt.sum(),
+                        abseta=abs(leading_j[passbtag].eta.sum()),
                         weight=np.ones(events.size)*cut
                     )
                     out[tagger].fill(
@@ -108,9 +113,9 @@ class BTagEfficiency(processor.ProcessorABC):
                         wp=wp,
                         btag='fail',
                         doublebtag=region,
-                        flavor=j_good[~passbtag].hadronFlavour.flatten(),
-                        pt=j_good[~passbtag].pt.flatten(),
-                        abseta=abs(j_good[~passbtag].eta.flatten()),
+                        flavor=leading_j[~passbtag].hadronFlavour.sum(),
+                        pt=leading_j[~passbtag].pt.sum(),
+                        abseta=abs(leading_j[~passbtag].eta.sum()),
                         weight=np.ones(events.size)*cut
                     )
                 

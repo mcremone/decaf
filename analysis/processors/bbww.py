@@ -537,8 +537,8 @@ class AnalysisProcessor(processor.ProcessorABC):
             discriminant = (2 * A * l.pz)**2 - 4 * (B - A**2) * C
             # avoiding imaginary solutions
             sqrt_discriminant = ak.where(discriminant >= 0, np.sqrt(discriminant), np.nan)
-            pz_1 = (-2*A*l.pz + sqrt_discriminant)/(2*C)
-            pz_2 = (-2*A*l.pz - sqrt_discriminant)/(2*C)
+            pz_1 = (2*A*l.pz + sqrt_discriminant)/(2*C)
+            pz_2 = (2*A*l.pz - sqrt_discriminant)/(2*C)
             return ak.where(abs(pz_1) < abs(pz_2), pz_1, pz_2)
 
         v_e = ak.zip(

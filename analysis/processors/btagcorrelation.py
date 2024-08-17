@@ -56,6 +56,8 @@ class BTagEfficiency(processor.ProcessorABC):
         fj = events.AK15Puppi
         fj['sd'] = fj.subjets.sum()
         fj['isgood'] = isGoodFatJet(fj.sd.pt, fj.sd.eta, fj.jetId)
+        probQCD=fj.probQCDbb+fj.probQCDcc+fj.probQCDb+fj.probQCDc+fj.probQCDothers
+        probZHbb=fj.probZbb+fj.probHbb
         fj['ZHbbvsQCD'] = probZHbb/(probZHbb+probQCD)
         fj_good = fj[fj.isgood.astype(np.bool)]
         fj_ngood = fj_good.counts

@@ -101,7 +101,7 @@ class BTagEfficiency(processor.ProcessorABC):
                         flavor=j_good[passbtag].hadronFlavour.flatten(),
                         pt=j_good[passbtag].pt.flatten(),
                         abseta=abs(j_good[passbtag].eta.flatten()),
-                        weight=cut
+                        weight=np.ones(events.size)*cut
                     )
                     out[tagger].fill(
                         dataset=dataset,
@@ -111,7 +111,7 @@ class BTagEfficiency(processor.ProcessorABC):
                         flavor=j_good[~passbtag].hadronFlavour.flatten(),
                         pt=j_good[~passbtag].pt.flatten(),
                         abseta=abs(j_good[~passbtag].eta.flatten()),
-                        weight=cut
+                        weight=np.ones(events.size)*cut
                     )
                 
         return out

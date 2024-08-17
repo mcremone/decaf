@@ -51,6 +51,7 @@ class BTagEfficiency(processor.ProcessorABC):
     def process(self, events):
         
         dataset = events.metadata['dataset']
+        selection = processor.PackedSelection()
         isGoodJet = self._ids['isGoodJet']
         isGoodFatJet    = self._ids['isGoodFatJet']   
         match = self._common['match']
@@ -78,50 +79,41 @@ class BTagEfficiency(processor.ProcessorABC):
 
         out = self.accumulator.identity()
 
-        passdoublebtag = (leading_fj.ZHbbvsQCD.sum() > self._ZHbbvsQCDwp[self._year])
-        for wp in ['loose','medium','tight']:
-            for tagger in ['deepflav','deepcsv']:
-                passbtag = j_good[name[tagger]] > self._btagWPs[tagger][self._year][wp]
-                out[tagger].fill(
-                    dataset=dataset,
-                    wp=wp,
-                    btag='pass',
-                    doublebtag='pass',
-                    flavor=j_good[passbtag].hadronFlavour.flatten(),
-                    pt=j_good[passbtag].pt.flatten(),
-                    abseta=abs(j_good[passbtag].eta.flatten()),
-                    weight=(fj_ngood>0)&passdoublebtag
-                )
-                out[tagger].fill(
-                    dataset=dataset,
-                    wp=wp,
-                    btag='fail',
-                    doublebtag='pass',
-                    flavor=j_good[~passbtag].hadronFlavour.flatten(),
-                    pt=j_good[~passbtag].pt.flatten(),
-                    abseta=abs(j_good[~passbtag].eta.flatten()),
-                    weight=(fj_ngood>0)&passdoublebtag
-                )
-                out[tagger].fill(
-                    dataset=dataset,
-                    wp=wp,
-                    btag='pass',
-                    doublebtag='fail',
-                    flavor=j_good[passbtag].hadronFlavour.flatten(),
-                    pt=j_good[passbtag].pt.flatten(),
-                    abseta=abs(j_good[passbtag].eta.flatten()),
-                    weight=(fj_ngood>0)&~passdoublebtag
-                )
-                out[tagger].fill(
-                    dataset=dataset,
-                    wp=wp,
-                    btag='fail',
-                    doublebtag='fail',
-                    flavor=j_good[~passbtag].hadronFlavour.flatten(),
-                    pt=j_good[~passbtag].pt.flatten(),
-                    abseta=abs(j_good[~passbtag].eta.flatten()),
-                    weight=(fj_ngood>0)&~passdoublebtag
-                )
+        selection.add('passdoublebtag',(leading_fj.ZHbbvsQCD.sum() > self._ZHbbvsQCDwp[self._year]))
+        selection.add('faildoublebtag',~(leading_fj.ZHbbvsQCD.sum() > self._ZHbbvsQCDwp[self._year]))
+        selection.add('fatjet', (fj_ngood>0))
+
+        regions = {
+            'pass':['fatjet','passdoublebtag'],
+            'fail':['fatjet','faildoublebtag']
+        }
+
+        for region, cuts in regions.items():
+            cut = selection.all(*regions[region])
+            for wp in ['loose','medium','tight']:
+                for tagger in ['deepflav','deepcsv']:
+                    passbtag = j_good[name[tagger]] > self._btagWPs[tagger][self._year][wp]
+                    out[tagger].fill(
+                        dataset=dataset,
+                        wp=wp,
+                        btag='pass',
+                        doublebtag=region,
+                        flavor=j_good[passbtag].hadronFlavour.flatten(),
+                        pt=j_good[passbtag].pt.flatten(),
+                        abseta=abs(j_good[passbtag].eta.flatten()),
+                        weight=cut
+                    )
+                    out[tagger].fill(
+                        dataset=dataset,
+                        wp=wp,
+                        btag='fail',
+                        doublebtag=region,
+                        flavor=j_good[~passbtag].hadronFlavour.flatten(),
+                        pt=j_good[~passbtag].pt.flatten(),
+                        abseta=abs(j_good[~passbtag].eta.flatten()),
+                        weight=cut
+                    )
+                
         return out
 
     def postprocess(self, a):

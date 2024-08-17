@@ -14,7 +14,6 @@ class BTagEfficiency(processor.ProcessorABC):
         self._btagWPs = wp
         self._ids = ids
         self._common = common
-        match = self._common['match']
         self._ZHbbvsQCDwp = {
             '2016': 0.53,
             '2017': 0.61,
@@ -54,6 +53,7 @@ class BTagEfficiency(processor.ProcessorABC):
         dataset = events.metadata['dataset']
         isGoodJet = self._ids['isGoodJet']
         isGoodFatJet    = self._ids['isGoodFatJet']   
+        match = self._common['match']
 
         fj = events.AK15Puppi
         fj['sd'] = fj.subjets.sum()

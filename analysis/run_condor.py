@@ -47,7 +47,9 @@ if options.cluster == 'kisti':
         os.system('xrdfs root://cms-xrdr.private.lo:2094/ rm /xrd/store/user/'+os.environ['USER']+'/pylocal.tgz') 
         print('pylocal removed')
         os.system('xrdcp -f ../../pylocal.tgz root://cms-xrdr.private.lo:2094//xrd/store/user/'+os.environ['USER']+'/pylocal.tgz')
-    jdl = """universe = vanilla
+    jdl = """universe = container
+container_image = /cvmfs/singularity.opensciencegrid.org/opensciencegrid/osgvo-el7:latest
++SingularityBind = "/cvmfs,/cms,/cms_scratch"
 Executable = run.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
@@ -67,9 +69,7 @@ if options.cluster == 'lpc':
     if options.copy:
         os.system('xrdcp -f ../../decaf.tgz root://cmseos.fnal.gov//store/user/'+os.environ['USER']+'/decaf.tgz')
         os.system('xrdcp -f ../../pylocal.tgz root://cmseos.fnal.gov//store/user/'+os.environ['USER']+'/pylocal.tgz')
-    jdl = """universe = container
-container_image = /cvmfs/singularity.opensciencegrid.org/opensciencegrid/osgvo-el7:latest
-+SingularityBind = "/cvmfs,/cms,/cms_scratch"
+    jdl = """universe = vanilla
 Executable = run.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT

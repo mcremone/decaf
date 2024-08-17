@@ -13,6 +13,7 @@ class BTagEfficiency(processor.ProcessorABC):
         self._year = year
         self._btagWPs = wp
         self._ids = ids
+        match = self._common['match']
         self._ZHbbvsQCDwp = {
             '2016': 0.53,
             '2017': 0.61,

@@ -68,8 +68,8 @@ class BTagEfficiency(processor.ProcessorABC):
 
         j = events.Jet
         j['isgood'] = isGoodJet(j.pt, j.eta, j.jetId, j.puId, j.neHEF, j.chHEF)
-        j_good = j[j.isgood.astype(np.bool)]
         j['isiso'] = ~match(j,leading_fj,1.5)
+        j_good = j[j.isgood.astype(np.bool)]
         j_iso = j_good[j_good.isiso.astype(np.bool)]
 
         name = {}

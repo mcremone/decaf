@@ -120,7 +120,7 @@ for workspace in workspaces:
                 os.environ['METHOD'] = options.method
                 os.environ['NAME'] = options.name
                 os.environ['OUTFOLDER']  = outfolder
-                os.environ['ARGUMENTS']     = options.arguments.replace('SIGNAL',signal).replace(' ','+').replace('"','X')
+                os.environ['ARGUMENTS']     = options.arguments.replace('SIGNAL',signal).replace(' ','+').replace('"','@')
                 os.system('condor_submit fit.submit')
         else:
             #outfolder = options.workspace.split('/')[-2]+'_'+tag
@@ -136,7 +136,7 @@ for workspace in workspaces:
             os.environ['METHOD'] = options.method
             os.environ['NAME'] = options.name
             os.environ['OUTFOLDER']  = outfolder
-            os.environ['ARGUMENTS']     = options.arguments.replace(' ','+').replace('"','X')
+            os.environ['ARGUMENTS']     = options.arguments.replace(' ','+').replace('"','@')
             os.system('condor_submit fit.submit')
     else:
         #outfolder = options.workspace.split('/')[-2]+'_'+tag

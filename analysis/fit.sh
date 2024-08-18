@@ -38,7 +38,7 @@ if [ "${3}" == "None"  ]; then
     python fit.py -M ${2} -w ${1} -n ${5}
 else
     export spaces=$( echo ${3} | tr '+' ' ' )
-    export arguments=$( echo $spaces | tr 'X' '"')
+    export arguments=$( echo $spaces | tr '@' '"')
     echo "python fit.py -M ${2} -w ${1} -a '$arguments' -n ${5}"
     python fit.py -M ${2} -w ${1} -a "$arguments" -n ${5}
 fi

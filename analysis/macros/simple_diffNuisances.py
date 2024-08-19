@@ -81,8 +81,8 @@ for i in range(fpf_s.getSize()):
         continue
     elif 'mcstat' in name:
         continue
-    elif 'doublebtag' in name:
-        continue
+    #elif 'doublebtag' in name:
+    #    continue
     elif 'wjets_norm2016pass' in name:
         continue
     elif 'wjets_norm2017pass' in name:

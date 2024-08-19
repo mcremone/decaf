@@ -466,7 +466,7 @@ def add_crs(year, mass, recoil, model, category):
         addVJetsSyst(background, recoil, "W+jets", "wmcr", wmcr_wjetsMC, category)
         
         tf, unc = makeTF(wmcr_wjetsMC, sr_wjetsMC)
-        wmcr_wjets = TransferFactorSample(ch_name + "_wjets", rl.Sample.BACKGROUND, tf, sr._samples[sr_wjets.name], nominal_values=wmcr_wjetsMC._nominal, stat_unc=None)#stat_unc=unc)
+        wmcr_wjets = TransferFactorSample(ch_name + "_wjets", rl.Sample.BACKGROUND, tf, sr._samples[sr_wjets.name], nominal_values=wmcr_wjetsMC._nominal, stat_unc=unc)#stat_unc=None)
         wmcr.addSample(wmcr_wjets)
 
     ###
@@ -482,14 +482,14 @@ def add_crs(year, mass, recoil, model, category):
         addBtagSyst(background, recoil, "TT", "wmcr", wmcr_ttMC, category, mass)
 
         tf, unc = makeTF(wmcr_ttMC, sr_ttMC)
-        wmcr_tt = TransferFactorSample(ch_name + "_tt", rl.Sample.BACKGROUND, tf, sr._samples[sr_tt.name], nominal_values=wmcr_ttMC._nominal, stat_unc=None)#stat_unc=unc)
+        wmcr_tt = TransferFactorSample(ch_name + "_tt", rl.Sample.BACKGROUND, tf, sr._samples[sr_tt.name], nominal_values=wmcr_ttMC._nominal, stat_unc=unc)#stat_unc=None)
         wmcr.addSample(wmcr_tt)
 
     ###
     # Add BB-lite
     ###
 
-    #addBBLiteSyst(wmcr)
+    addBBLiteSyst(wmcr)
 
     
     
@@ -637,7 +637,7 @@ def add_crs(year, mass, recoil, model, category):
         addVJetsSyst(background, recoil, "W+jets", "wecr", wecr_wjetsMC, category)
 
         tf, unc = makeTF(wecr_wjetsMC, sr_wjetsMC)
-        wecr_wjets = TransferFactorSample( ch_name + "_wjets", rl.Sample.BACKGROUND, tf, sr._samples[sr_wjets.name], nominal_values=wecr_wjetsMC._nominal, stat_unc=None)#stat_unc=unc)
+        wecr_wjets = TransferFactorSample( ch_name + "_wjets", rl.Sample.BACKGROUND, tf, sr._samples[sr_wjets.name], nominal_values=wecr_wjetsMC._nominal, stat_unc=unc)#stat_unc=None)
         wecr.addSample(wecr_wjets)
         
 
@@ -654,14 +654,14 @@ def add_crs(year, mass, recoil, model, category):
         addBtagSyst(background, recoil, "TT", "wecr", wecr_ttMC, category, mass)
 
         tf, unc = makeTF(wecr_ttMC, sr_ttMC)
-        wecr_tt = TransferFactorSample( ch_name + "_tt", rl.Sample.BACKGROUND, tf, sr._samples[sr_tt.name], nominal_values=wecr_ttMC._nominal, stat_unc=None)#stat_unc=unc)
+        wecr_tt = TransferFactorSample( ch_name + "_tt", rl.Sample.BACKGROUND, tf, sr._samples[sr_tt.name], nominal_values=wecr_ttMC._nominal, stat_unc=unc)#stat_unc=None)
         wecr.addSample(wecr_tt)
 
     ###
     # Add BB-lite
     ###
 
-    #addBBLiteSyst(wecr)
+    addBBLiteSyst(wecr)
 
     
     ###
@@ -805,14 +805,14 @@ def add_crs(year, mass, recoil, model, category):
         addBtagSyst(background, recoil, "TT", "tmcr", tmcr_ttMC, category, mass)
 
         tf, unc = makeTF(tmcr_ttMC, sr_ttMC)
-        tmcr_tt = TransferFactorSample(ch_name + "_tt", rl.Sample.BACKGROUND, tf, sr._samples[sr_tt.name], nominal_values=tmcr_ttMC._nominal, stat_unc=None)#stat_unc=unc)
+        tmcr_tt = TransferFactorSample(ch_name + "_tt", rl.Sample.BACKGROUND, tf, sr._samples[sr_tt.name], nominal_values=tmcr_ttMC._nominal, stat_unc=unc)#stat_unc=None)
         tmcr.addSample(tmcr_tt)
 
     ###
     # Add BB-lite
     ###
 
-    #addBBLiteSyst(tmcr)
+    addBBLiteSyst(tmcr)
 
     
 
@@ -958,14 +958,14 @@ def add_crs(year, mass, recoil, model, category):
         addBtagSyst(background, recoil, "TT", "tecr", tecr_ttMC, category, mass)
 
         tf, unc = makeTF(tecr_ttMC, sr_ttMC)
-        tecr_tt = TransferFactorSample(ch_name + "_tt", rl.Sample.BACKGROUND, tf, sr._samples[sr_tt.name], nominal_values=tecr_ttMC._nominal, stat_unc=None)#stat_unc=unc)
+        tecr_tt = TransferFactorSample(ch_name + "_tt", rl.Sample.BACKGROUND, tf, sr._samples[sr_tt.name], nominal_values=tecr_ttMC._nominal, stat_unc=unc)#stat_unc=None)
         tecr.addSample(tecr_tt)
 
     ###
     # Add BB-lite
     ###
 
-    #addBBLiteSyst(tecr)
+    addBBLiteSyst(tecr)
 
     
     ###
@@ -1216,39 +1216,39 @@ if __name__ == "__main__":
     ###
     ###
     
-    lumi = rl.NuisanceParameter("lumi" + year, "lnN")
-    lumi_corr = rl.NuisanceParameter("lumi_corr", "lnN")
-    lumi_1718 = rl.NuisanceParameter("lumi_1718", "lnN")
-    pu = rl.NuisanceParameter("pu" + year, "lnN")
-    prefiring = rl.NuisanceParameter("prefiring" + year, "lnN")
-    id_e = rl.NuisanceParameter("id_e" + year, "lnN")
-    id_mu = rl.NuisanceParameter("id_mu" + year, "lnN")
-    id_pho = rl.NuisanceParameter("id_pho" + year, "lnN")
-    reco_e = rl.NuisanceParameter("reco_e" + year, "lnN")
-    iso_mu = rl.NuisanceParameter("iso_mu" + year, "lnN")
-    trig_e = rl.NuisanceParameter("trig_e" + year, "lnN")
+    lumi = rl.NuisanceParameter("lumi_" + year, "lnN")
+    lumi_corr = rl.NuisanceParameter("lumi_13TeV_correlated", "lnN")
+    lumi_1718 = rl.NuisanceParameter("lumi_13TeV_1718", "lnN")
+    pu = rl.NuisanceParameter("CMS_pileup_" + year, "lnN")
+    prefiring = rl.NuisanceParameter("CMS_l1_ecal_prefiring_" + year, "lnN")
+    id_e = rl.NuisanceParameter("CMS_eff_e_id_" + year, "lnN")
+    id_mu = rl.NuisanceParameter("CMS_eff_m_id_" + year, "lnN")
+    id_pho = rl.NuisanceParameter("CMS_eff_g_IDMVA_" + year, "lnN")
+    reco_e = rl.NuisanceParameter("CMS_eff_e_reco_" + year, "lnN")
+    iso_mu = rl.NuisanceParameter("CMS_eff_m_iso_" + year, "lnN")
+    trig_e = rl.NuisanceParameter("CMS_eff_e_trigger_" + year, "lnN")
     trig_met = rl.NuisanceParameter("trig_met" + year, "lnN")
     trig_pho = rl.NuisanceParameter("trig_pho" + year, "lnN")
     veto_tau = rl.NuisanceParameter("veto_tau" + year, "lnN")
-    jes = rl.NuisanceParameter("jes" + year, "lnN")
-    met = rl.NuisanceParameter("met" + year, "lnN")
-    btagSFbc_correlated = rl.NuisanceParameter("btagSFbc_correlated", "shape")  # AK4 btag
-    btagSFbc = rl.NuisanceParameter("btagSFbc_" + year, "shape")  # AK4 btag
-    btagSFlight_correlated = rl.NuisanceParameter("btagSFlight_correlated", "shape")  # AK4 btag
-    btagSFlight = rl.NuisanceParameter("btagSFlight_" + year, "shape")  # AK4 btag 
-    ew1 = rl.NuisanceParameter("ew1", "lnN")
+    jes = rl.NuisanceParameter("CMS_scale_j_" + year, "lnN")
+    met = rl.NuisanceParameter("CMS_scale_met" + year, "lnN")
+    btagSFbc_correlated = rl.NuisanceParameter("CMS_btag_heavy_correlated", "shape")  # AK4 btag
+    btagSFbc = rl.NuisanceParameter("CMS_btag_heavy" + year, "shape")  # AK4 btag
+    btagSFlight_correlated = rl.NuisanceParameter("CMS_btag_light_correlated", "shape")  # AK4 btag
+    btagSFlight = rl.NuisanceParameter("CMS_btag_light" + year, "shape")  # AK4 btag 
+    ew1 = rl.NuisanceParameter("ew1", "lnN") #Effects of unknown Sudakov logs
     #ew2G = rl.NuisanceParameter("ew2G", "lnN")
-    ew2W = rl.NuisanceParameter("ew2W", "lnN")
-    ew2Z = rl.NuisanceParameter("ew2Z", "lnN")
+    ew2W = rl.NuisanceParameter("ew2W", "lnN") #Missing NNLO effects for W boson
+    ew2Z = rl.NuisanceParameter("ew2Z", "lnN") #Missing NNLO effects for Z boson
     #ew3G = rl.NuisanceParameter("ew3G", "lnN")
-    ew3W = rl.NuisanceParameter("ew3W", "lnN")
-    ew3Z = rl.NuisanceParameter("ew3Z", "lnN")
+    ew3W = rl.NuisanceParameter("ew3W", "lnN") #Effects of NLL Sudakov approx. w W boson
+    ew3Z = rl.NuisanceParameter("ew3Z", "lnN") #Effects of NLL Sudakov approx. w Z boson
     mix = rl.NuisanceParameter("mix", "lnN")
     #muF = rl.NuisanceParameter("muF", "lnN")
     #muR = rl.NuisanceParameter("muR", "lnN")
     qcd1 = rl.NuisanceParameter("qcd1", "lnN")
-    qcd2 = rl.NuisanceParameter("qcd2", "lnN")
-    qcd3 = rl.NuisanceParameter("qcd3", "lnN")
+    qcd2 = rl.NuisanceParameter("qcd2", "lnN") #pT shape dependence
+    qcd3 = rl.NuisanceParameter("qcd3", "lnN") #Process dependence
     #doublebtag = rl.NuisanceParameter("doublebtag_" + year, "shape")
     doublebtag = rl.NuisanceParameter("doublebtag_" + year, "lnN")
         
@@ -1441,7 +1441,7 @@ if __name__ == "__main__":
             tf,
             sr_fail._samples[sr_fail_zjets.name],
             nominal_values=sr_fail_wjetsMC._nominal,
-            stat_unc=None#stat_unc=unc
+            stat_unc=unc#stat_unc=None
         )
         sr_fail.addSample(sr_fail_wjets)
 
@@ -1449,7 +1449,7 @@ if __name__ == "__main__":
         # Add BB-lite
         ###
 
-        #addBBLiteSyst(sr_fail)
+        addBBLiteSyst(sr_fail)
 
         sr_zjets = sr_fail_zjets
         sr_wjets = sr_fail_wjets
@@ -1654,7 +1654,7 @@ if __name__ == "__main__":
                 tf_paramsW,
                 sr_fail._samples[sr_fail_wjets.name],
                 nominal_values=sr_pass_wjetsMC._nominal,
-                stat_unc=None#stat_unc=unc
+                stat_unc=unc#stat_unc=None
             )
             sr_pass.addSample(sr_pass_wjets)
 
@@ -1682,7 +1682,7 @@ if __name__ == "__main__":
             tf_paramsZ,
             sr_fail._samples[sr_fail_zjets.name],
             nominal_values=sr_pass_zjetsMC._nominal,
-            stat_unc=None#stat_unc=unc
+            stat_unc=unc#stat_unc=None
         )
         sr_pass.addSample(sr_pass_zjets)
 
@@ -1690,7 +1690,7 @@ if __name__ == "__main__":
         # Add BB-lite
         ###
     
-        #addBBLiteSyst(sr_pass)
+        addBBLiteSyst(sr_pass)
     
     
         ###

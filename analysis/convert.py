@@ -7,7 +7,7 @@ if __name__ == '__main__':
     parser.add_option('-d', '--datacard', help='datacard', dest='datacard')
     parser.add_option('-o', '--outfile', help='outfile', dest='outfile')
     parser.add_option('-m', '--maps', help='maps', dest='maps')
-    parser.add_option('-a', '--arguments', help='arguments', dest='arguments', default='')
+    parser.add_option('-a', '--arguments', help='arguments', dest='arguments', default='--channel-masks')
     (options, args) = parser.parse_args()
     
     command = 'text2workspace.py '+options.datacard

@@ -87,7 +87,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                 ]
     }
             
-    def __init__(self, year, xsec, corrections, ids, common):
+    def __init__(self, year, xsec):
 
         self._year = year
         self._lumi = 1000.*float(AnalysisProcessor.lumis[year])

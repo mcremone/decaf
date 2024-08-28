@@ -187,7 +187,7 @@ The `nohup` command is useful and recommended for running most scripts, but you 
 MC b-tagging efficiencies are needed by most of the analyses to compute the b-tag event weight, once such efficiencies are corrected with the POG-provided b-tag SFs. To compute them, we first need to run the `common` module in `util`:
 
 ```
-python utils/common.py
+python3 utils/common.py
 ```
 
 This will generate a series of auxiliary functions and information, like the AK4 b-tagging working points, and it will save such information in a `.coffea` file in the `data` folder. AK4 b-tagging working points are essential to measure the MC efficiencies and they are used by the `btag` processor in the `processors` folder. To generate the processor file: 
@@ -239,7 +239,7 @@ The options for this script are the same as for run.py, with the addition of:
    - **Usage**: `-t` (no argument needed)
 
 3. **`-x` or `--copy`**:
-   - Copies these two tarballs to your EOS area. For example, to run the same setup but for a different year you won’t need to tar and copy again. You can simply do: `python run_condor.py -p btag2017 -m 2017 -d QCD -c kisti`
+   - Copies these two tarballs to your EOS area. For example, to run the same setup but for a different year you won’t need to tar and copy again. You can simply do: `python3 run_condor.py -p btag2017 -m 2017 -d QCD -c kisti`
    - **Usage**: `-x` (no argument needed))
 
 You can check the status of your HTCondor jobs by doing:
@@ -251,7 +251,7 @@ condor_q <YOUR_USERNAME>
 After obtaining all the histograms, a first step of data reduction is needed. This step is achieved by running the `reduce.py` script:
 
 ```
-python reduce.py -f hists/btag2018
+python3 reduce.py -f hists/btag2018
 ```
 
 The options of this script are:

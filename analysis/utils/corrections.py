@@ -1053,7 +1053,7 @@ corrections = {
     'get_mu_rochester_sf':      get_mu_rochester_sf,
     'jet_factory':              jet_factory,
     'subjet_factory':           subjet_factory,
-    #'fatjet_factory':           fatjet_factory,
+    'fatjet_factory':           fatjet_factory,
     'met_factory':              met_factory
 }
 

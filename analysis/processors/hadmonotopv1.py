@@ -99,7 +99,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         self._samples = {
             'sr':('Z1Jets','Z2Jets','WJets','DY','TT','ST','WW','WZ','ZZ','QCD','MET','TPhiTo2Chi'),
             'wmcr':('WJets','DY','TT','ST','WW','WZ','ZZ','QCD','MET'),
-            'tmcr':('WJets','DY','TT','ST','WW','WZ','ZZ','QCD','MET'=),
+            'tmcr':('WJets','DY','TT','ST','WW','WZ','ZZ','QCD','MET'),
             'wecr':('WJets','DY','TT','ST','WW','WZ','ZZ','QCD','SingleElectron','EGamma'),
             'tecr':('WJets','DY','TT','ST','WW','WZ','ZZ','QCD','SingleElectron','EGamma'),
             'zmcr':('DY','TT','ST','WW','WZ','ZZ','QCD','MET'),

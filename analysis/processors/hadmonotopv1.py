@@ -394,7 +394,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         get_met_xy_correction    = self._corrections['get_met_xy_correction']
         get_pu_weight            = self._corrections['get_pu_weight']    
         get_nlo_ewk_weight       = self._corrections['get_nlo_ewk_weight']    
-        get_nnlo_nlo_weight      = self._corrections['get_nnlo_nlo_weight'][self._year]
+        get_nnlo_nlo_weight      = self._corrections['get_nnlo_nlo_weight']
         get_msd_corr             = self._corrections['get_msd_corr']
         get_btag_weight      = self._corrections['get_btag_weight']
         get_ttbar_weight     = self._corrections['get_ttbar_weight']

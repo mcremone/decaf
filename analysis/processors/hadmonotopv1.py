@@ -466,7 +466,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         mu_ntight = ak.num(mu_tight, axis=1)
         leading_mu = ak.firsts(mu_tight)
         mu_pairs = ak.combinations(mu_loose, 2)
-        dimu = mu_pairs["0"], mu_pairs["1"]
+        dimu = mu_pairs["0"]+mu_pairs["1"]
         dimu['T'] = ak.zip(
             {
                 "r": dimu.pt,
@@ -514,7 +514,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         e_ntight = ak.num(e_tight, axis=1)
         leading_e = ak.firsts(e_tight)
         ele_pairs = ak.combinations(ele_loose, 2)
-        diele = ele_pairs["0"], ele_pairs["1"]
+        diele = ele_pairs["0"]+ele_pairs["1"]
         diele['T'] = ak.zip(
             {
                 "r": diele.pt,

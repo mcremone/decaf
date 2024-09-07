@@ -466,7 +466,7 @@ def add_crs(year, mass, recoil, model, category):
         addVJetsSyst(background, recoil, "W+jets", "wmcr", wmcr_wjetsMC, category)
         
         tf, unc = makeTF(wmcr_wjetsMC, sr_wjetsMC)
-        wmcr_wjets = TransferFactorSample(ch_name + "_wjets", rl.Sample.BACKGROUND, tf, sr._samples[sr_wjets.name], nominal_values=wmcr_wjetsMC._nominal, stat_unc=None)#stat_unc=unc)
+        wmcr_wjets = TransferFactorSample(ch_name + "_wjets", rl.Sample.BACKGROUND, tf, sr._samples[sr_wjets.name], nominal_values=wmcr_wjetsMC._nominal, stat_unc=unc)#stat_unc=None)
         wmcr.addSample(wmcr_wjets)
 
     ###
@@ -482,14 +482,14 @@ def add_crs(year, mass, recoil, model, category):
         addBtagSyst(background, recoil, "TT", "wmcr", wmcr_ttMC, category, mass)
 
         tf, unc = makeTF(wmcr_ttMC, sr_ttMC)
-        wmcr_tt = TransferFactorSample(ch_name + "_tt", rl.Sample.BACKGROUND, tf, sr._samples[sr_tt.name], nominal_values=wmcr_ttMC._nominal, stat_unc=None)#stat_unc=unc)
+        wmcr_tt = TransferFactorSample(ch_name + "_tt", rl.Sample.BACKGROUND, tf, sr._samples[sr_tt.name], nominal_values=wmcr_ttMC._nominal, stat_unc=unc)#stat_unc=None)
         wmcr.addSample(wmcr_tt)
 
     ###
     # Add BB-lite
     ###
 
-    #addBBLiteSyst(wmcr)
+    addBBLiteSyst(wmcr)
 
     
     
@@ -637,7 +637,7 @@ def add_crs(year, mass, recoil, model, category):
         addVJetsSyst(background, recoil, "W+jets", "wecr", wecr_wjetsMC, category)
 
         tf, unc = makeTF(wecr_wjetsMC, sr_wjetsMC)
-        wecr_wjets = TransferFactorSample( ch_name + "_wjets", rl.Sample.BACKGROUND, tf, sr._samples[sr_wjets.name], nominal_values=wecr_wjetsMC._nominal, stat_unc=None)#stat_unc=unc)
+        wecr_wjets = TransferFactorSample( ch_name + "_wjets", rl.Sample.BACKGROUND, tf, sr._samples[sr_wjets.name], nominal_values=wecr_wjetsMC._nominal, stat_unc=unc)#stat_unc=None)
         wecr.addSample(wecr_wjets)
         
 
@@ -654,14 +654,14 @@ def add_crs(year, mass, recoil, model, category):
         addBtagSyst(background, recoil, "TT", "wecr", wecr_ttMC, category, mass)
 
         tf, unc = makeTF(wecr_ttMC, sr_ttMC)
-        wecr_tt = TransferFactorSample( ch_name + "_tt", rl.Sample.BACKGROUND, tf, sr._samples[sr_tt.name], nominal_values=wecr_ttMC._nominal, stat_unc=None)#stat_unc=unc)
+        wecr_tt = TransferFactorSample( ch_name + "_tt", rl.Sample.BACKGROUND, tf, sr._samples[sr_tt.name], nominal_values=wecr_ttMC._nominal, stat_unc=unc)#stat_unc=None)
         wecr.addSample(wecr_tt)
 
     ###
     # Add BB-lite
     ###
 
-    #addBBLiteSyst(wecr)
+    addBBLiteSyst(wecr) 
 
     
     ###
@@ -805,14 +805,14 @@ def add_crs(year, mass, recoil, model, category):
         addBtagSyst(background, recoil, "TT", "tmcr", tmcr_ttMC, category, mass)
 
         tf, unc = makeTF(tmcr_ttMC, sr_ttMC)
-        tmcr_tt = TransferFactorSample(ch_name + "_tt", rl.Sample.BACKGROUND, tf, sr._samples[sr_tt.name], nominal_values=tmcr_ttMC._nominal, stat_unc=None)#stat_unc=unc)
+        tmcr_tt = TransferFactorSample(ch_name + "_tt", rl.Sample.BACKGROUND, tf, sr._samples[sr_tt.name], nominal_values=tmcr_ttMC._nominal, stat_unc=unc)#stat_unc=None)
         tmcr.addSample(tmcr_tt)
 
     ###
     # Add BB-lite
     ###
 
-    #addBBLiteSyst(tmcr)
+    addBBLiteSyst(tmcr)
 
     
 
@@ -958,14 +958,14 @@ def add_crs(year, mass, recoil, model, category):
         addBtagSyst(background, recoil, "TT", "tecr", tecr_ttMC, category, mass)
 
         tf, unc = makeTF(tecr_ttMC, sr_ttMC)
-        tecr_tt = TransferFactorSample(ch_name + "_tt", rl.Sample.BACKGROUND, tf, sr._samples[sr_tt.name], nominal_values=tecr_ttMC._nominal, stat_unc=None)#stat_unc=unc)
+        tecr_tt = TransferFactorSample(ch_name + "_tt", rl.Sample.BACKGROUND, tf, sr._samples[sr_tt.name], nominal_values=tecr_ttMC._nominal, stat_unc=unc)#stat_unc=None)
         tecr.addSample(tecr_tt)
 
     ###
     # Add BB-lite
     ###
 
-    #addBBLiteSyst(tecr)
+    addBBLiteSyst(tecr)
 
     
     ###
@@ -1441,7 +1441,7 @@ if __name__ == "__main__":
             tf,
             sr_fail._samples[sr_fail_zjets.name],
             nominal_values=sr_fail_wjetsMC._nominal,
-            stat_unc=None#stat_unc=unc
+            stat_unc=unc#stat_unc=None
         )
         sr_fail.addSample(sr_fail_wjets)
 
@@ -1449,7 +1449,7 @@ if __name__ == "__main__":
         # Add BB-lite
         ###
 
-        #addBBLiteSyst(sr_fail)
+        addBBLiteSyst(sr_fail)
 
         sr_zjets = sr_fail_zjets
         sr_wjets = sr_fail_wjets
@@ -1654,7 +1654,7 @@ if __name__ == "__main__":
                 tf_paramsW,
                 sr_fail._samples[sr_fail_wjets.name],
                 nominal_values=sr_pass_wjetsMC._nominal,
-                stat_unc=None#stat_unc=unc
+                stat_unc=unc#stat_unc=None
             )
             sr_pass.addSample(sr_pass_wjets)
 
@@ -1682,7 +1682,7 @@ if __name__ == "__main__":
             tf_paramsZ,
             sr_fail._samples[sr_fail_zjets.name],
             nominal_values=sr_pass_zjetsMC._nominal,
-            stat_unc=None#stat_unc=unc
+            stat_unc=unc#stat_unc=None
         )
         sr_pass.addSample(sr_pass_zjets)
 
@@ -1690,7 +1690,7 @@ if __name__ == "__main__":
         # Add BB-lite
         ###
     
-        #addBBLiteSyst(sr_pass)
+        addBBLiteSyst(sr_pass)
     
     
         ###

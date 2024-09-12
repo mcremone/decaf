@@ -164,7 +164,14 @@ class AnalysisProcessor(processor.ProcessorABC):
                 'Events',
                 hist.Cat('dataset', 'Dataset'),
                 hist.Cat('region', 'Region'),
-                hist.Bin('met','MET',30,0,600),
+                hist.Bin('met','MET',40,0,1000),
+                hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
+            ),
+            'calomet': hist.Hist(
+                'Events',
+                hist.Cat('dataset', 'Dataset'),
+                hist.Cat('region', 'Region'),
+                hist.Bin('calomet','CaloMET',40,0,1000),
                 hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
             ),
             'metphi': hist.Hist(
@@ -704,7 +711,6 @@ class AnalysisProcessor(processor.ProcessorABC):
             selection.add('mindphi_'+region, (abs(u[region].delta_phi(j_clean.T)).min()>0.5))
             selection.add('minDphi_'+region, (abs(u[region].delta_phi(fj_clean.T)).min()>1.5))
             selection.add('calo_'+region, ( (abs(calomet.pt - met.pt) / u[region].mag) < 0.5))
-            #regions[region].update({'recoil_'+region,'mindphi_'+region})
             if 'qcd' not in region:
                 regions[region].insert(0, 'recoil_'+region)
                 regions[region].insert(3, 'mindphi_'+region)
@@ -715,6 +721,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                 'minDphirecoil':          abs(u[region].delta_phi(fj_clean.T)).min(),
                 'CaloMinusPfOverRecoil':  abs(calomet.pt - met.pt) / u[region].mag,
                 'met':                    met.pt.flatten(),
+                'calomet':                calomet.pt.flatten(),
                 'metphi':                 met.phi.flatten(),
                 'mindphimet':             abs(met.T.delta_phi(j_clean.T)).min(),
                 'minDphimet':             abs(met.T.delta_phi(fj_clean.T)).min(),

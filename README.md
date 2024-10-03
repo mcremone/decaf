@@ -67,6 +67,23 @@ cmsenv
 
 ---
 
+### Lxplus Setup 
+
+First, log into lxplus: 
+ssh -Y <USERNAME>@lxplus.cern.ch 
+
+The CMSSW version used runs on slc7. You'll need to setup the correct OS environment using [singularity](https://cms-sw.github.io/singularity.html). 
+On lxplus, this can be done with: 
+cmssw-el7 
+
+Install `CMSSW_11_3_4` in your home directory:
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+cmsrel CMSSW_11_3_4
+cd CMSSW_11_3_4/src
+cmsenv
+
+
+
 ### Installing Packages
 
 The rest of the setup should be the same regardless of what cluster you are working on.
@@ -231,7 +248,7 @@ python3 run_condor.py -p btag2018 -m 2018 -d QCD -c kisti -t -x
 The options for this script are the same as for run.py, with the addition of:
 
 1. **`-c` or `--cluster`**:
-   - Specifies which cluster you are using. Currently supports `lpc` or `kisti`.
+   - Specifies which cluster you are using. Currently supports `lpc` or `kisti` or `lxplus`.
    - **Usage**: `-c <cluster_name>`
 
 2. **`-t` or `--tar`**:
@@ -247,6 +264,10 @@ You can check the status of your HTCondor jobs by doing:
 ```
 condor_q <YOUR_USERNAME>
 ```
+
+Note that in order to use the condor scripts, you need to change the name of the certificate with your own certificate's name in the scripts.
+
+
 
 After obtaining all the histograms, a first step of data reduction is needed. This step is achieved by running the `reduce.py` script:
 

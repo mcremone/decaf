@@ -31,7 +31,7 @@ if options.tar:
               '--exclude=\'src/decaf/analysis/results\' '
               '--exclude=\'src/decaf/analysis/data/models\' '
               '--exclude=\'src/decaf/analysis/hists/*/*.futures\' '
-              '--exclude=\'src/decaf/analysis/hists/*/*.merged\'    '
+              '--exclude=\'src/decaf/analysis/hists/*/*.merged\' '
               '--exclude=\'src/decaf/analysis/hists/*/*.reduced\' '
               '../../../../CMSSW_11_3_4')
     os.system('tar --exclude-caches-all --exclude-vcs -czvf ../../../../pylocal_3_8.tgz -C ~/.local/lib/python3.8/ site-packages')
@@ -83,16 +83,16 @@ Queue 1"""
 
 if options.cluster == 'lxplus':
     if options.copy:
-        os.system('xrdfs root://eosuser.cern.ch/ ls /eos/user/s/sedurgut)
+        #os.system('ls /eosuser.cern.ch//eos/user/'+os.environ['USER'][0] + '/' + os.environ['USER'])
         os.system('xrdcp -f ../../../../cmssw_11_3_4.tgz root://eosuser.cern.ch//eos/user/'+os.environ['USER'][0] +'/'+ os.environ['USER']+'/cmssw_11_3_4.tgz')
-        os.system('xrdcp -f ../../../../pylocal_3_8.tgz root://eosuser.cern.ch//eos/user/'+os.environ['USER'][0] +'/' + os.environ['USER']+'/pylocal_3_8.tgz')
+        os.system('xrdcp -f ../../../../pylocal_3_8.tgz root://eosuser.cern.ch//eos/user/'+os.environ['USER'][0] + '/'+os.environ['USER']+'/pylocal_3_8.tgz')
     jdl = """universe = container
-    container_image = /cvmfs/cms.cern.ch/common/cmssw-el7
-    +SingularityBind = "/cvmfs,/cms,/cms_scratch"
+    container_image = /cvmfs/singularity.opensciencegrid.org/opensciencegrid/osgvo-el7:latest
+    +SingularityBind = "/cvmfs,/cms,/cms_scratch,/cvmfs/singularity.opensciencegrid.org/opensciencegrid/osgvo:el7"
 Executable = run.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
-Transfer_Input_Files = run.sh, /tmp/x509up_u156288
+Transfer_Input_Files = run.sh
 Output = logs/condor/run/out/$ENV(PROCESSOR)_$ENV(SAMPLE)_$(Cluster)_$(Process).stdout
 Error = logs/condor/run/err/$ENV(PROCESSOR)_$ENV(SAMPLE)_$(Cluster)_$(Process).stderr
 Log = logs/condor/run/log/$ENV(PROCESSOR)_$ENV(SAMPLE)_$(Cluster)_$(Process).log

@@ -1709,7 +1709,7 @@ if __name__ == "__main__":
             addMETTrigSyst(sr_pass_signal, year)
             sr_pass_signal.setParamEffect(veto_tau, nveto_tau)
             addBtagSyst(signal, recoil, str(s), "sr", sr_pass_signal, "pass", mass)
-            addDoubleBtagSyst(signal, str(s), "sr", sr_pass_signal, "pass")
+            #addDoubleBtagSyst(signal, str(s), "sr", sr_pass_signal, "pass")
             sr_pass.addSample(sr_pass_signal)
         
         if not iswjetsMC:

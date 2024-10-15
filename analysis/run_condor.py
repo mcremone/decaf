@@ -84,11 +84,13 @@ Queue 1"""
 if options.cluster == 'lxplus':
     if options.copy:
         #os.system('ls /eosuser.cern.ch//eos/user/'+os.environ['USER'][0] + '/' + os.environ['USER'])
+        os.system('echo $PWD')
         os.system('xrdcp -f ../../../../cmssw_11_3_4.tgz root://eosuser.cern.ch//eos/user/'+os.environ['USER'][0] +'/'+ os.environ['USER']+'/cmssw_11_3_4.tgz')
         os.system('xrdcp -f ../../../../pylocal_3_8.tgz root://eosuser.cern.ch//eos/user/'+os.environ['USER'][0] + '/'+os.environ['USER']+'/pylocal_3_8.tgz')
-    jdl = """universe = container
-    container_image = /cvmfs/singularity.opensciencegrid.org/opensciencegrid/osgvo-el7:latest
-    +SingularityBind = "/cvmfs,/cms,/cms_scratch,/cvmfs/singularity.opensciencegrid.org/opensciencegrid/osgvo:el7"
+    jdl = """SINGULARITY_JOB = true
+    SINGULARITY_IMAGE_EXPR = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cat/cmssw-lxplus/cmssw-el7-lxplus:latest"
+    Proxy_filename = x509up_u156288
+    Proxy_path = /afs/cern.ch/user/s/sedurgut/private/$(Proxy_filename)
 Executable = run.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
@@ -97,7 +99,7 @@ Output = logs/condor/run/out/$ENV(PROCESSOR)_$ENV(SAMPLE)_$(Cluster)_$(Process).
 Error = logs/condor/run/err/$ENV(PROCESSOR)_$ENV(SAMPLE)_$(Cluster)_$(Process).stderr
 Log = logs/condor/run/log/$ENV(PROCESSOR)_$ENV(SAMPLE)_$(Cluster)_$(Process).log
 TransferOutputRemaps = "$ENV(PROCESSOR)_$ENV(SAMPLE).futures=$ENV(PWD)/hists/$ENV(PROCESSOR)/$ENV(SAMPLE).futures"
-Arguments = $ENV(METADATA) $ENV(SAMPLE) $ENV(PROCESSOR) $ENV(CLUSTER) $ENV(USER)
+Arguments = $ENV(METADATA) $ENV(SAMPLE) $ENV(PROCESSOR) $ENV(CLUSTER) $ENV(USER) $(Proxy_path)
 JobBatchName = $ENV(BTCN)
 request_cpus = 8
 request_memory = 16000

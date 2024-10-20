@@ -207,7 +207,7 @@ def addBBLiteSyst(channel, epsilon=1e-5, effect_threshold=0.01, threshold=0, inc
                     continue
                 if sample._nominal[i] <= 1e-5:
                     continue
-                print(sample._name, i, effect, name + "_mcstat_bin%i" % i)
+                #print(sample._name, i, effect, name + "_mcstat_bin%i" % i)
                 sample.setParamEffect(param, effect_up, effect_down)
                 
 def addBtagSyst(dictionary, recoil, process, region, templ, category, mass):

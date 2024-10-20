@@ -229,28 +229,28 @@ def addBtagSyst(dictionary, recoil, process, region, templ, category, mass):
 #    doublebtagDown = template(dictionary, process, 'doublebtagDown', recoil, region, category, mass)[0]
 #    templ.setParamEffect(doublebtag, doublebtagUp, doublebtagDown)
 
-#def addDoubleBtagSyst(dictionary, process, region, templ, category): 
-#    def addSyst(dictionary, process, region, templ, category, syst, string):
-#        histogram = dictionary[region].integrate("process", process)
-#        nominal=histogram.integrate("systematic", "nominal").sum('recoil','fjmass').values()[()][category_map[category]]
-#        up=histogram.integrate("systematic", string+"Up").sum('recoil','fjmass').values()[()][category_map[category]]
-#        systUp = up / nominal
-#        systUp = np.nan_to_num(systUp, nan=1.)
-#        print(templ._name,systUp)
-#        templ.setParamEffect(syst, systUp)
-#    addSyst(dictionary, process, region, templ, category, doublebtag, "doublebtag")
-
-def addDoubleBtagSyst(dictionary, recoil, process, region, templ, category): 
-    def addSyst(dictionary, recoil, process, region, templ, category, syst, string):
+def addDoubleBtagSyst(dictionary, process, region, templ, category): 
+    def addSyst(dictionary, process, region, templ, category, syst, string):
         histogram = dictionary[region].integrate("process", process)
-        nominal=histogram.integrate("systematic", "nominal").values()[()][recoil, :, category_map[category]]
-        up=histogram.integrate("systematic", string+"Up").values()[()][recoil, :, category_map[category]]
-        down=histogram.integrate("systematic",string+"Down").values()[()][recoil, :, category_map[category]]
-        systUp = np.array( up.sum() / nominal.sum() )
-        systUp[np.isnan(systUp)] = 1.
-        systUp = systUp.sum()
+        nominal=histogram.integrate("systematic", "nominal").sum('recoil','fjmass').values()[()][category_map[category]]
+        up=histogram.integrate("systematic", string+"Up").sum('recoil','fjmass').values()[()][category_map[category]]
+        systUp = up / nominal
+        systUp = np.nan_to_num(systUp, nan=1.)
+        print(templ._name,systUp)
         templ.setParamEffect(syst, systUp)
-    addSyst(dictionary, recoil, process, region, templ, category, doublebtag, "doublebtag")
+    addSyst(dictionary, process, region, templ, category, doublebtag, "doublebtag")
+
+#def addDoubleBtagSyst(dictionary, recoil, process, region, templ, category): 
+#    def addSyst(dictionary, recoil, process, region, templ, category, syst, string):
+#        histogram = dictionary[region].integrate("process", process)
+#        nominal=histogram.integrate("systematic", "nominal").values()[()][recoil, :, category_map[category]]
+#        up=histogram.integrate("systematic", string+"Up").values()[()][recoil, :, category_map[category]]
+#        down=histogram.integrate("systematic",string+"Down").values()[()][recoil, :, category_map[category]]
+#        systUp = np.array( up.sum() / nominal.sum() )
+#        systUp[np.isnan(systUp)] = 1.
+#        systUp = systUp.sum()
+#        templ.setParamEffect(syst, systUp)
+#    addSyst(dictionary, recoil, process, region, templ, category, doublebtag, "doublebtag")
 
 def addVJetsSyst(dictionary, recoil, process, region, templ, category):
     def addSyst(dictionary, recoil, process, region, templ, category, syst, string):

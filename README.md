@@ -1,8 +1,3 @@
-Readme 
-
-
-
-
 <img src="https://user-images.githubusercontent.com/10731328/193421563-cf992d8b-8e5e-4530-9179-7dbd507d2e02.png" width="350"/>
 
 # **D**ark matter **E**xperience with the **C**offea **A**nalysis **F**ramework
@@ -67,20 +62,29 @@ cmsenv
 
 ---
 
-### Lxplus Setup 
+### LXPLUS Setup 
 
 First, log into lxplus: 
-ssh -Y <USERNAME>@lxplus.cern.ch 
+
+```
+ssh -Y <USERNAME>@lxplus.cern.ch
+```
 
 The CMSSW version used runs on slc7. You'll need to setup the correct OS environment using [singularity](https://cms-sw.github.io/singularity.html). 
-On lxplus, this can be done with: 
-cmssw-el7 
+On lxplus, this can be done with:
+
+```
+cmssw-el7
+```
 
 Install `CMSSW_11_3_4` in your home directory:
+
+```
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 cmsrel CMSSW_11_3_4
 cd CMSSW_11_3_4/src
 cmsenv
+```
 
 
 
@@ -97,6 +101,15 @@ cd HiggsAnalysis/CombinedLimit
 git fetch origin
 git checkout v9.1.0 # current recommeneded tag (Jan 2024)
 scramv1 b clean; scramv1 b # always make a clean build
+```
+
+Also install `CombineHarvester`:
+```
+cd $CMSSW_BASE/src
+git clone https://github.com/cms-analysis/CombineHarvester.git CombineHarvester
+cd CombineHarvester
+git checkout v2.1.0
+scram b
 ```
 
 Fork this repo on github and clone it into your `CMSSW_11_3_4/src` directory:

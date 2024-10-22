@@ -71,10 +71,32 @@ ssh -Y <USERNAME>@lxplus.cern.ch
 ```
 
 The CMSSW version used runs on slc7. You'll need to setup the correct OS environment using [singularity](https://cms-sw.github.io/singularity.html). 
-On lxplus, this can be done with:
+On lxplus, this can be done by following the instructions at [this link](https://gitlab.cern.ch/cms-cat/cmssw-lxplus/-/blob/master/README.md#usage). Essentially you need to create a script, called `start_el7.sh`, that looks like this:
 
 ```
-cmssw-el7
+#!/bin/bash
+export APPTAINER_BINDPATH=/afs,/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security,/cvmfs/grid.cern.ch/etc/grid-security/vomses:/etc/vomses,/eos,/etc/pki/ca-trust,/etc/tnsnames.ora,/run/user,/tmp,/var/run/user,/etc/sysconfig,/etc:/orig/etc
+schedd=`myschedd show -j | jq .currentschedd | tr -d '"'`
+
+apptainer -s exec /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cat/cmssw-lxplus/cmssw-el7-lxplus:latest/ sh -c "source /app/setupCondor.sh && export _condor_SCHEDD_HOST=$schedd && export _condor_SCHEDD_NAME=$schedd && export _condor_CREDD_HOST=$schedd && /bin/bash  "
+```
+
+You will make the script executable and you will run it:
+
+```
+./start_el7.sh
+```
+
+When doing that, you may get an error like this:
+
+```
+2024/10/21 23:12:38 [ERROR] - HTTP code: 404: Requested user (mcremone) is not known in pool share
+```
+
+If that is the case, simply bump to a better schedd by doing:
+
+```
+myschedd bump
 ```
 
 Install `CMSSW_11_3_4` in your home directory:
@@ -147,6 +169,12 @@ Singularity on KISTI:
 
 ```
 setup_el7
+```
+
+Singularity on LXPLUS:
+
+```
+./start_el7.sh
 ```
 
 Then, go to where you installed CMSSW and do:

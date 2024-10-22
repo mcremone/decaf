@@ -67,6 +67,7 @@ if options.cluster == 'lpc':
         os.system('xrdcp -f ../../../../cmssw_11_3_4.tgz root://cmseos.fnal.gov//store/user/'+os.environ['USER']+'/cmssw_11_3_4.tgz')
         os.system('xrdcp -f ../../../../pylocal_3_8.tgz root://cmseos.fnal.gov//store/user/'+os.environ['USER']+'/pylocal_3_8.tgz')
     jdl = """universe = vanilla
++DesiredOS = "SL7"
 Executable = run.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT

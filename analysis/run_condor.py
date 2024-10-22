@@ -88,9 +88,9 @@ if options.cluster == 'lxplus':
         os.system('xrdcp -f ../../../../cmssw_11_3_4.tgz root://eosuser.cern.ch//eos/user/'+os.environ['USER'][0] +'/'+ os.environ['USER']+'/cmssw_11_3_4.tgz')
         os.system('xrdcp -f ../../../../pylocal_3_8.tgz root://eosuser.cern.ch//eos/user/'+os.environ['USER'][0] + '/'+os.environ['USER']+'/pylocal_3_8.tgz')
     jdl = """SINGULARITY_JOB = true
-    SINGULARITY_IMAGE_EXPR = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cat/cmssw-lxplus/cmssw-el7-lxplus:latest"
-    Proxy_filename = x509up_u156288
-    Proxy_path = /afs/cern.ch/user/s/sedurgut/private/$(Proxy_filename)
+SINGULARITY_IMAGE_EXPR = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cat/cmssw-lxplus/cmssw-el7-lxplus:latest"
+Proxy_filename = x509up_u156288
+Proxy_path = /afs/cern.ch/user/s/sedurgut/private/$(Proxy_filename)
 Executable = run.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT

@@ -33,12 +33,9 @@ if [ "${4}" == "lpc" ]; then
 fi 
 
 if [ "${4}" == "lxplus" ]; then
-    echo 'cluster: lxplus'
-    export SCRAM_ARCH=slc7_amd64_gcc900
-    export XrdSecDEBUG=1
-    export X509_USER_PROXY=$6
+    export X509_USER_PROXY=x509up
     voms-proxy-info -all
-    voms-proxy-info -all -file $6
+    voms-proxy-info -all -file x509up
     xrdcp -s root://eosuser.cern.ch//eos/user/${USER:0:1}/$USER/cmssw_11_3_4.tgz .
     echo "Decaf correctly copied"
     xrdcp -s root://eosuser.cern.ch//eos/user/${USER:0:1}/$USER/pylocal_3_8.tgz .

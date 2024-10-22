@@ -56,4 +56,5 @@ if __name__ == '__main__':
     processor_instance=load('data/'+options.processor+'.processor')
     with gzip.open("metadata/"+options.metadata+".json.gz") as fin:
         samplefiles = json.load(fin)
+    print("samplefiles:"+samplefiles)
     run(processor_instance, samplefiles)

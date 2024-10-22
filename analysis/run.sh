@@ -29,6 +29,7 @@ else
     xrdcp -s root://cmseos.fnal.gov//store/user/$USER/pylocal_3_8.tgz .
     echo "Python correctly copied"
 fi
+echo $(hostname)
 tar -zxvf cmssw_11_3_4.tgz
 tar -zxvf pylocal_3_8.tgz
 rm cmssw_11_3_4.tgz
@@ -43,6 +44,7 @@ export PYTHONWARNINGS="ignore"
 echo "Updated python path: " $PYTHONPATH
 cd decaf/analysis
 echo "python3 run.py --metadata ${1} --dataset ${2} --processor ${3}"
+cp ../../run.py .
 python3 run.py --metadata ${1} --dataset ${2} --processor ${3}
 ls hists/${3}/${2}.futures
 cp hists/${3}/${2}.futures ${_CONDOR_SCRATCH_DIR}/${3}_${2}.futures

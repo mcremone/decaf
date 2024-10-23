@@ -17,10 +17,23 @@ kinit <USERNAME>@FNAL.GOV
 ssh <USERNAME>@cmslpc-el9.fnal.gov
 ```
 
-The CMSSW version used runs on slc7. You'll need to setup the correct OS environment using [singularity](https://cms-sw.github.io/singularity.html) (more LPC documentation [here](https://uscms.org/uscms_at_work/computing/setup/setup_software.shtml#apptainer)):
+The CMSSW version used runs on slc7. You'll need to setup the correct OS environment using [singularity](https://cms-sw.github.io/singularity.html) (more LPC documentation [here](https://uscms.org/uscms_at_work/computing/setup/setup_software.shtml#apptainer)). First you need to clone `lpc-scripts` in your home area:
 
 ```
-cmssw-el7 -p --bind `readlink $HOME` --bind `readlink -f ${HOME}/nobackup/` --bind /uscms_data --bind /cvmfs -- /bin/bash -l
+cd ~
+git clone https://github.com/FNALLPC/lpc-scripts
+```
+
+Then you are going to edit your `.bashrc`, adding the following line:
+
+```
+source ~/lpc-scripts/call_host.sh
+```
+
+Now you should log out and log back in for the changes to take effect. To start the container use the following command. 
+
+```
+cmssw-el7 -p --bind `readlink $HOME` --bind `readlink -f ${HOME}/nobackup/` --bind /uscms_data --bind /cvmfs -- /bin/bash
 ```
 
 Install `CMSSW_11_3_4` in your `nobackup` area:

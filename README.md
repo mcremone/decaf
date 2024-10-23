@@ -175,7 +175,7 @@ source /cvmfs/cms.cern.ch/cmsset_default.sh
 Singularity on LPC:
 
 ```
-cmssw-el7 -p --bind `readlink $HOME` --bind `readlink -f ${HOME}/nobackup/` --bind /uscms_data --bind /cvmfs -- /bin/bash -l
+cmssw-el7 -p --bind `readlink $HOME` --bind `readlink -f ${HOME}/nobackup/` --bind /uscms_data --bind /cvmfs -- /bin/bash
 ```
 
 Singularity on KISTI:

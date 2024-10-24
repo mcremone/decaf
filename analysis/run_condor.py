@@ -101,7 +101,7 @@ error                   = logs/condor/run/err/$ENV(PROCESSOR)_$ENV(SAMPLE)_$(Clu
 log                     = logs/condor/run/log/$ENV(PROCESSOR)_$ENV(SAMPLE)_$(Cluster)_$(Process).log
 TransferOutputRemaps    = "$ENV(PROCESSOR)_$ENV(SAMPLE).futures=$ENV(PWD)/hists/$ENV(PROCESSOR)/$ENV(SAMPLE).futures"
 Arguments               = $ENV(METADATA) $ENV(SAMPLE) $ENV(PROCESSOR) $ENV(CLUSTER) $ENV(USER)
-MY.SingularityImage     = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/batch-team/containers/plusbatch/el7-full:latest"
+MY.SingularityImage     = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cat/cmssw-lxplus/cmssw-el7-lxplus:latest/"
 request_cpus            = 8
 request_memory          = 16000
 JobBatchName            = $ENV(BTCN)

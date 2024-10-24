@@ -18,7 +18,8 @@ parser.add_option('-k', '--skip', help='skip', dest='skip')
 parser.add_option('-r', '--remove', action='store_true', dest='remove')
 (options, args) = parser.parse_args()
 
-globalredirect = "root://xrootd-cms.infn.it/"
+#globalredirect = "root://xrootd-cms.infn.it/"
+globalredirect = "root://cmsxrootd.fnal.gov/"
 campaigns ={}
 campaigns['2016preVFP'] = ['*HIPM*UL2016*JMENano*', '*UL16*JMENano*preVFP*']
 campaigns['2016postVFP'] = ['*-UL2016*JMENano*', '*UL16JMENano*']
@@ -147,6 +148,7 @@ for dataset in xsections.keys():
               print('Correct query:',query)
               print('Primary datasets are:',pds.split("\n"))
               for pd in pds.split("\n"):
+                  print(pd)
                   query="dasgoclient --query=\"file dataset="+pd+"\""
                   urllist += os.popen(query).read().split("\n")
      for url in urllist[:]:

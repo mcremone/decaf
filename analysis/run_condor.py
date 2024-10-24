@@ -63,22 +63,26 @@ request_memory = 30000
 Queue 1"""
 
 if options.cluster == 'lpc':
+    if options.tar:
+        os.system('tar --exclude-caches-all --exclude-vcs -czvf ../../../../lcg_3_8.tgz -C /cvmfs/cms.cern.ch/slc7_amd64_gcc900/external/py3-setuptools/51.3.3/lib/python3.8/ site-packages')
     if options.copy:
         os.system('xrdcp -f ../../../../cmssw_11_3_4.tgz root://cmseos.fnal.gov//store/user/'+os.environ['USER']+'/cmssw_11_3_4.tgz')
         os.system('xrdcp -f ../../../../pylocal_3_8.tgz root://cmseos.fnal.gov//store/user/'+os.environ['USER']+'/pylocal_3_8.tgz')
+        os.system('xrdcp -f ../../../../pylocal_3_8.tgz root://cmseos.fnal.gov//store/user/'+os.environ['USER']+'/lcg_3_8.tgz')
     jdl = """universe = vanilla
 Executable = run.sh
++ApptainerImage = "/cvmfs/singularity.opensciencegrid.org/cmssw/cms:rhel7"
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
 Transfer_Input_Files = run.sh
-Output = logs/condor/run/out/$ENV(PROCESSOR)_$ENV(SAMPLE)_$(Cluster)_$(Process).stdout
-Error = logs/condor/run/err/$ENV(PROCESSOR)_$ENV(SAMPLE)_$(Cluster)_$(Process).stderr
-Log = logs/condor/run/log/$ENV(PROCESSOR)_$ENV(SAMPLE)_$(Cluster)_$(Process).log
-TransferOutputRemaps = "$ENV(PROCESSOR)_$ENV(SAMPLE).futures=$ENV(PWD)/hists/$ENV(PROCESSOR)/$ENV(SAMPLE).futures"
-Arguments = $ENV(METADATA) $ENV(SAMPLE) $ENV(PROCESSOR) $ENV(CLUSTER) $ENV(USER) 
-JobBatchName = $ENV(BTCN)
+Output = logs/condor/run/out/%PROCESSOR%_%SAMPLE%_$(Cluster)_$(Process).stdout
+Error = logs/condor/run/err/%PROCESSOR%_%SAMPLE%_$(Cluster)_$(Process).stderr
+Log = logs/condor/run/log/%PROCESSOR%_%SAMPLE%_$(Cluster)_$(Process).log
+TransferOutputRemaps = "%PROCESSOR%_%SAMPLE%.futures=$ENV(PWD)/hists/%PROCESSOR%/%SAMPLE%.futures"
+Arguments = %METADATA% %SAMPLE% %PROCESSOR% %CLUSTER% $ENV(USER) 
+JobBatchName = %BTCN%
 request_cpus = 8
-request_memory = 16000
+request_memory = 30000
 Queue 1"""
 
 if options.cluster == 'lxplus':
@@ -127,5 +131,13 @@ for dataset, info in datadef.items():
     os.environ['PROCESSOR']   = options.processor
     os.environ['METADATA']   = options.metadata
     os.environ['CLUSTER'] = options.cluster
+    jdl = jdl.replace('%SAMPLE%', dataset)
+    jdl = jdl.replace('%BTCN%', dataset.split('____')[0])
+    jdl = jdl.replace('%PROCESSOR%', options.processor)
+    jdl = jdl.replace('%METADATA%', options.metadata)
+    jdl = jdl.replace('%CLUSTER%', options.cluster)
+    jdl_file = open("run.submit", "w") 
+    jdl_file.write(jdl) 
+    jdl_file.close() 
     os.system('condor_submit run.submit')
 os.system('rm run.submit')

@@ -7,7 +7,7 @@ import gzip
 import pickle
 import json
 import time
-import numexpr
+#import numexpr
 import os
 from optparse import OptionParser
 
@@ -79,6 +79,29 @@ Arguments = $ENV(METADATA) $ENV(SAMPLE) $ENV(PROCESSOR) $ENV(CLUSTER) $ENV(USER)
 JobBatchName = $ENV(BTCN)
 request_cpus = 8
 request_memory = 16000
+Queue 1"""
+
+if options.cluster == 'lxplus':
+    if options.copy:
+        #os.system('ls /eosuser.cern.ch//eos/user/'+os.environ['USER'][0] + '/' + os.environ['USER'])
+        os.system('echo $PWD')
+        os.system('xrdcp -f ../../../../cmssw_11_3_4.tgz root://eosuser.cern.ch//eos/user/'+os.environ['USER'][0] +'/'+ os.environ['USER']+'/cmssw_11_3_4.tgz')
+        os.system('xrdcp -f ../../../../pylocal_3_8.tgz root://eosuser.cern.ch//eos/user/'+os.environ['USER'][0] + '/'+os.environ['USER']+'/pylocal_3_8.tgz')
+    jdl = """universe                = vanilla
+executable              = run.sh
+should_transfer_files   = YES
+when_to_transfer_output = ON_EXIT
+transfer_input_files    = run.sh, /afs/cern.ch/user/m/mcremone/private/x509up
+output                  = logs/condor/run/out/$ENV(PROCESSOR)_$ENV(SAMPLE)_$(Cluster)_$(Process).stdout
+error                   = logs/condor/run/err/$ENV(PROCESSOR)_$ENV(SAMPLE)_$(Cluster)_$(Process).stderr
+log                     = logs/condor/run/log/$ENV(PROCESSOR)_$ENV(SAMPLE)_$(Cluster)_$(Process).log
+TransferOutputRemaps    = "$ENV(PROCESSOR)_$ENV(SAMPLE).futures=$ENV(PWD)/hists/$ENV(PROCESSOR)/$ENV(SAMPLE).futures"
+Arguments               = $ENV(METADATA) $ENV(SAMPLE) $ENV(PROCESSOR) $ENV(CLUSTER) $ENV(USER)
+MY.SingularityImage     = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/batch-team/containers/plusbatch/el7-full:latest"
+request_cpus            = 8
+request_memory          = 16000
+JobBatchName            = $ENV(BTCN)
++JobFlavour             = "tomorrow"
 Queue 1"""
 
 jdl_file = open("run.submit", "w") 

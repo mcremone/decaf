@@ -1,8 +1,3 @@
-Readme 
-
-
-
-
 <img src="https://user-images.githubusercontent.com/10731328/193421563-cf992d8b-8e5e-4530-9179-7dbd507d2e02.png" width="350"/>
 
 # **D**ark matter **E**xperience with the **C**offea **A**nalysis **F**ramework
@@ -67,6 +62,54 @@ cmsenv
 
 ---
 
+### LXPLUS Setup 
+
+First, log into lxplus: 
+
+```
+ssh -Y <USERNAME>@lxplus.cern.ch
+```
+
+The CMSSW version used runs on slc7. You'll need to setup the correct OS environment using [singularity](https://cms-sw.github.io/singularity.html). 
+On lxplus, this can be done by following the instructions at [this link](https://gitlab.cern.ch/cms-cat/cmssw-lxplus/-/blob/master/README.md#usage). Essentially you need to create a script, called `start_el7.sh`, that looks like this:
+
+```
+#!/bin/bash
+export APPTAINER_BINDPATH=/afs,/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security,/cvmfs/grid.cern.ch/etc/grid-security/vomses:/etc/vomses,/eos,/etc/pki/ca-trust,/etc/tnsnames.ora,/run/user,/tmp,/var/run/user,/etc/sysconfig,/etc:/orig/etc
+schedd=`myschedd show -j | jq .currentschedd | tr -d '"'`
+
+apptainer -s exec /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cat/cmssw-lxplus/cmssw-el7-lxplus:latest/ sh -c "source /app/setupCondor.sh && export _condor_SCHEDD_HOST=$schedd && export _condor_SCHEDD_NAME=$schedd && export _condor_CREDD_HOST=$schedd && /bin/bash  "
+```
+
+You will make the script executable and you will run it:
+
+```
+./start_el7.sh
+```
+
+When doing that, you may get an error like this:
+
+```
+2024/10/21 23:12:38 [ERROR] - HTTP code: 404: Requested user (mcremone) is not known in pool share
+```
+
+If that is the case, simply bump to a better schedd by doing:
+
+```
+myschedd bump
+```
+
+Install `CMSSW_11_3_4` in your home directory:
+
+```
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+cmsrel CMSSW_11_3_4
+cd CMSSW_11_3_4/src
+cmsenv
+```
+
+
+
 ### Installing Packages
 
 The rest of the setup should be the same regardless of what cluster you are working on.
@@ -80,6 +123,15 @@ cd HiggsAnalysis/CombinedLimit
 git fetch origin
 git checkout v9.1.0 # current recommeneded tag (Jan 2024)
 scramv1 b clean; scramv1 b # always make a clean build
+```
+
+Also install `CombineHarvester`:
+```
+cd $CMSSW_BASE/src
+git clone https://github.com/cms-analysis/CombineHarvester.git CombineHarvester
+cd CombineHarvester
+git checkout v2.1.0
+scram b
 ```
 
 Fork this repo on github and clone it into your `CMSSW_11_3_4/src` directory:
@@ -117,6 +169,12 @@ Singularity on KISTI:
 
 ```
 setup_el7
+```
+
+Singularity on LXPLUS:
+
+```
+./start_el7.sh
 ```
 
 Then, go to where you installed CMSSW and do:
@@ -231,7 +289,7 @@ python3 run_condor.py -p btag2018 -m 2018 -d QCD -c kisti -t -x
 The options for this script are the same as for run.py, with the addition of:
 
 1. **`-c` or `--cluster`**:
-   - Specifies which cluster you are using. Currently supports `lpc` or `kisti`.
+   - Specifies which cluster you are using. Currently supports `lpc` or `kisti` or `lxplus`.
    - **Usage**: `-c <cluster_name>`
 
 2. **`-t` or `--tar`**:
@@ -247,6 +305,10 @@ You can check the status of your HTCondor jobs by doing:
 ```
 condor_q <YOUR_USERNAME>
 ```
+
+Note that in order to use the condor scripts, you need to change the name of the certificate with your own certificate's name in the scripts.
+
+
 
 After obtaining all the histograms, a first step of data reduction is needed. This step is achieved by running the `reduce.py` script:
 

@@ -23,15 +23,26 @@ if [ "${4}" == "kisti" ]; then
     echo "Decaf correctly copied"
     xrdcp -s root://cms-xrdr.private.lo:2094//xrd/store/user/$USER/pylocal_3_8.tgz .
     echo "Python correctly copied"
-else
+fi 
+
+if [ "${4}" == "lpc" ]; then
     xrdcp -s root://cmseos.fnal.gov//store/user/$USER/cmssw_11_3_4.tgz .
     echo "Decaf correctly copied"
     xrdcp -s root://cmseos.fnal.gov//store/user/$USER/pylocal_3_8.tgz .
     echo "Python correctly copied"
+fi 
+
+if [ "${4}" == "lxplus" ]; then
+    export X509_USER_PROXY=x509up
+    voms-proxy-info -all
+    voms-proxy-info -all -file x509up
+    xrdcp -s root://eosuser.cern.ch//eos/user/${USER:0:1}/$USER/cmssw_11_3_4.tgz .
+    echo "Decaf correctly copied"
+    xrdcp -s root://eosuser.cern.ch//eos/user/${USER:0:1}/$USER/pylocal_3_8.tgz .
+    echo "Python correctly copied"
 fi
-echo $(hostname)
-tar -zxvf cmssw_11_3_4.tgz
-tar -zxvf pylocal_3_8.tgz
+tar -zxf cmssw_11_3_4.tgz
+tar -zxf pylocal_3_8.tgz
 rm cmssw_11_3_4.tgz
 rm pylocal_3_8.tgz
 export SCRAM_ARCH=slc7_amd64_gcc900
@@ -48,4 +59,3 @@ cp ../../run.py .
 python3 run.py --metadata ${1} --dataset ${2} --processor ${3}
 ls hists/${3}/${2}.futures
 cp hists/${3}/${2}.futures ${_CONDOR_SCRATCH_DIR}/${3}_${2}.futures
-

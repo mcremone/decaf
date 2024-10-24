@@ -30,6 +30,14 @@ if [ "${4}" == "lpc" ]; then
     echo "Decaf correctly copied"
     xrdcp -s root://cmseos.fnal.gov//store/user/$USER/pylocal_3_8.tgz .
     echo "Python correctly copied"
+    xrdcp -s root://cmseos.fnal.gov//store/user/$USER/lcg_3_8.tgz .
+    echo "LCG Python correctly copied"
+    tar -zxvf lcg_3_8.tgz
+    mv site-packages lcg-site-packages
+    export PYTHONPATH=${_CONDOR_SCRATCH_DIR}/lcg-site-packages:$PYTHONPATH
+    export PYTHONPATH=$(find ${_CONDOR_SCRATCH_DIR}/lcg-site-packages/ -name *.egg |tr '\n' ':')$PYTHONPATH
+    export PYTHONWARNINGS="ignore"
+    echo "Updated python path: " $PYTHONPATH
 fi 
 
 if [ "${4}" == "lxplus" ]; then
@@ -42,8 +50,8 @@ if [ "${4}" == "lxplus" ]; then
     echo "Python correctly copied"
 fi
 
-tar -zxf cmssw_11_3_4.tgz
-tar -zxf pylocal_3_8.tgz
+tar -zxvf cmssw_11_3_4.tgz
+tar -zxvf pylocal_3_8.tgz
 rm cmssw_11_3_4.tgz
 rm pylocal_3_8.tgz
 export SCRAM_ARCH=slc7_amd64_gcc900

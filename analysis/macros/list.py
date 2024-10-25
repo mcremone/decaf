@@ -150,8 +150,10 @@ for dataset in xsections.keys():
               print('Primary datasets are:',pds.split("\n"))
               for pd in pds.split("\n"):
                   os.system('rucio add-rule cms:'+pd+' 1 '+options.transfer+' --lifetime 15780000 --comment \'example\' --grouping \'ALL\' --ask-approval --activity \'User AutoApprove\'')
-                  query="dasgoclient --query=\"file dataset="+pd+"\""
+                  query="dasgoclient --query=\"file dataset=/store/test/xrootd/"+options.transfer.replace('_DISK','')+pd+"\""
+                  print(query)
                   urllist += os.popen(query).read().split("\n")
+                  print(urllist)
      for url in urllist[:]:
           urllist[urllist.index(url)]=redirect+url
      print('list lenght:',len(urllist))

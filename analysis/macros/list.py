@@ -149,9 +149,12 @@ for dataset in xsections.keys():
               print('Correct query:',query)
               print('Primary datasets are:',pds.split("\n"))
               for pd in pds.split("\n"):
+                   if pd == '': continue
+                   print("Considering dataset",pd)
                    query="dasgoclient --query=\"site dataset="+pd+"\""
-                   if options.transfer not in os.popen(query).read():
-                     print(options.transfer,"not in", os.popen(query).read())
+                   sites=os.popen(query).read()
+                   if options.transfer not in sites.split("\n"):
+                     print(options.transfer,"not in", sites.split("\n"))
                      print("Initiating transfer")
                      os.system('rucio add-rule cms:'+pd+' 1 '+options.transfer+' --lifetime 15780000 --comment \'example\' --grouping \'ALL\' --ask-approval --activity \'User AutoApprove\'')
                    query="dasgoclient --query=\"file dataset="+pd+"\""

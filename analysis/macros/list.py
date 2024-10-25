@@ -153,6 +153,7 @@ for dataset in xsections.keys():
                    print("Considering dataset",pd)
                    query="dasgoclient --query=\"site dataset="+pd+"\""
                    sites=os.popen(query).read()
+                   print("Check if",options.transfer,"is in", sites.split("\n"))
                    if options.transfer not in sites.split("\n"):
                      print(options.transfer,"not in", sites.split("\n"))
                      print("Initiating transfer")

@@ -16,6 +16,7 @@ parser.add_option('-s', '--special', help='special', dest='special')
 parser.add_option('-c', '--custom', action='store_true', dest='custom')
 parser.add_option('-k', '--skip', help='skip', dest='skip')
 parser.add_option('-r', '--remove', action='store_true', dest='remove')
+parser.add_option('-t', '--transfer', help='transfer', dest='transfer', default='T1_US_FNAL_Disk')
 (options, args) = parser.parse_args()
 
 #globalredirect = "root://xrootd-cms.infn.it/"
@@ -148,7 +149,7 @@ for dataset in xsections.keys():
               print('Correct query:',query)
               print('Primary datasets are:',pds.split("\n"))
               for pd in pds.split("\n"):
-                  print(pd)
+                  os.system('rucio add-rule cms:'+pd+' 1 '+options.transfer+' --lifetime 15780000 --comment \'example\' --grouping \'ALL\' --ask-approval --activity \'User AutoApprove\'')
                   query="dasgoclient --query=\"file dataset="+pd+"\""
                   urllist += os.popen(query).read().split("\n")
      for url in urllist[:]:

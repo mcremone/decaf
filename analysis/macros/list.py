@@ -49,26 +49,26 @@ custom['2018'] = ["/store/user/mwassmer/customNano",
                  "/store/user/swieland/customNano"]
 
 def split(arr, size):
-     arrs = []
-     while len(arr) > size:
-         pice = arr[:size]
-         arrs.append(pice)
-         arr   = arr[size:]
-     arrs.append(arr)
-     return arrs
+  arrs = []       
+  while len(arr) > size:
+    pice = arr[:size]
+    arrs.append(pice)
+    arr   = arr[size:]
+  arrs.append(arr)
+  return arrs
 
 def find(_list):
-     if not _list:
-          return []
-     files=[]
-     print('Looking into',_list)
-     for path in _list:
-         command='xrdfs '+eos+' ls '+path
-         results=os.popen(command).read()
-         files.extend(results.split())
-     if not any('.root' in _file for _file in files):
-         files=find(files)
-     return files
+  if not _list:
+    return []
+  files=[]
+  print('Looking into',_list)
+  for path in _list:
+    command='xrdfs '+eos+' ls '+path
+    results=os.popen(command).read()
+    files.extend(results.split())
+  if not any('.root' in _file for _file in files):
+    files=find(files)
+  return files
 
 xsections={}
 for k,v in processes.items():
@@ -135,7 +135,7 @@ for dataset in xsections.keys():
                         del infile
 
      else:
-          redirect = globalredirect
+          redirect = globalredirect+"/store/test/xrootd/"+options.transfer.replace('_DISK','')
           urllist = []
           for campaign in campaigns[options.year]:
               query="dasgoclient --query=\"dataset dataset=/"+dataset+"/"+campaign+"*/NANOAOD*\""
@@ -149,11 +149,13 @@ for dataset in xsections.keys():
               print('Correct query:',query)
               print('Primary datasets are:',pds.split("\n"))
               for pd in pds.split("\n"):
-                  os.system('rucio add-rule cms:'+pd+' 1 '+options.transfer+' --lifetime 15780000 --comment \'example\' --grouping \'ALL\' --ask-approval --activity \'User AutoApprove\'')
-                  query="dasgoclient --query=\"file dataset=/store/test/xrootd/"+options.transfer.replace('_DISK','')+pd+"\""
-                  print(query)
-                  urllist += os.popen(query).read().split("\n")
-                  print(urllist)
+                   query="dasgoclient --query=\"site dataset="+pd+"\""
+                   if options.transfer not in os.popen(query).read():
+                     print(options.transfer,"not in", os.popen(query).read())
+                     print("Initiating transfer")
+                     os.system('rucio add-rule cms:'+pd+' 1 '+options.transfer+' --lifetime 15780000 --comment \'example\' --grouping \'ALL\' --ask-approval --activity \'User AutoApprove\'')
+                   query="dasgoclient --query=\"file dataset="+pd+"\""
+                   urllist += os.popen(query).read().split("\n")
      for url in urllist[:]:
           urllist[urllist.index(url)]=redirect+url
      print('list lenght:',len(urllist))

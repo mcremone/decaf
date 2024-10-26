@@ -136,6 +136,7 @@ for dataset in xsections.keys():
 
      else:
           redirect = globalredirect+"/store/test/xrootd/"+options.transfer.replace('_DISK','')
+          os.system('source /cvmfs/cms.cern.ch/rucio/setup-py3.sh')
           urllist = []
           for campaign in campaigns[options.year]:
               query="dasgoclient --query=\"dataset dataset=/"+dataset+"/"+campaign+"*/NANOAOD*\""

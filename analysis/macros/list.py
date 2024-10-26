@@ -135,7 +135,7 @@ for dataset in xsections.keys():
                         del infile
 
      else:
-          redirect = globalredirect+"/store/test/xrootd/"+options.transfer.replace('_Disk','')
+          redirect = globalredirect#+"/store/test/xrootd/"+options.transfer.replace('_Disk','')
           os.system('source /cvmfs/cms.cern.ch/rucio/setup-py3.sh')
           urllist = []
           for campaign in campaigns[options.year]:

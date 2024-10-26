@@ -150,7 +150,7 @@ for dataset in xsections.keys():
               print('Correct query:',query)
               print('Primary datasets are:',pds.split("\n"))
               for pd in pds.split("\n"):
-                   if '/store/' not in pd: continue
+                   if '/' not in pd: continue
                    print("Considering dataset",pd)
                    query="dasgoclient --query=\"site dataset="+pd+"\""
                    sites=os.popen(query).read()

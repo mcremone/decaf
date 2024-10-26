@@ -135,7 +135,7 @@ for dataset in xsections.keys():
                         del infile
 
      else:
-          redirect = globalredirect+"/store/test/xrootd/"+options.transfer.replace('_DISK','')
+          redirect = globalredirect+"/store/test/xrootd/"+options.transfer.replace('_Disk','')
           os.system('source /cvmfs/cms.cern.ch/rucio/setup-py3.sh')
           urllist = []
           for campaign in campaigns[options.year]:
@@ -150,7 +150,7 @@ for dataset in xsections.keys():
               print('Correct query:',query)
               print('Primary datasets are:',pds.split("\n"))
               for pd in pds.split("\n"):
-                   if pd == '': continue
+                   if '/store/' not in pd: continue
                    print("Considering dataset",pd)
                    query="dasgoclient --query=\"site dataset="+pd+"\""
                    sites=os.popen(query).read()

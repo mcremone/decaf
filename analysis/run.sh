@@ -55,7 +55,6 @@ export PYTHONWARNINGS="ignore"
 echo "Updated python path: " $PYTHONPATH
 cd decaf/analysis
 echo "python3 run.py --metadata ${1} --dataset ${2} --processor ${3}"
-cp ../../run.py .
 python3 run.py --metadata ${1} --dataset ${2} --processor ${3}
 ls hists/${3}/${2}.futures
 cp hists/${3}/${2}.futures ${_CONDOR_SCRATCH_DIR}/${3}_${2}.futures

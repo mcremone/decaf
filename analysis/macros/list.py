@@ -20,7 +20,8 @@ parser.add_option('-t', '--transfer', help='transfer', dest='transfer', default=
 (options, args) = parser.parse_args()
 
 #globalredirect = "root://xrootd-cms.infn.it/"
-globalredirect = "root://cmsxrootd.fnal.gov/"
+#globalredirect = "root://cmsxrootd.fnal.gov/"
+globalredirect = "cmsxrootd-site.fnal.gov"
 campaigns ={}
 campaigns['2016preVFP'] = ['*HIPM*UL2016*JMENano*', '*UL16*JMENano*preVFP*']
 campaigns['2016postVFP'] = ['*-UL2016*JMENano*', '*UL16JMENano*']
@@ -95,6 +96,7 @@ if options.skip:
 removed = []
 datadef = {}
 datasets = []
+os.system('source /cvmfs/cms.cern.ch/rucio/setup-py3.sh')
 for dataset in xsections.keys():
      if options.dataset:
           if not any(_dataset in dataset for _dataset in options.dataset.split(',')): continue
@@ -136,7 +138,6 @@ for dataset in xsections.keys():
 
      else:
           redirect = globalredirect#+"/store/test/xrootd/"+options.transfer.replace('_Disk','')
-          os.system('source /cvmfs/cms.cern.ch/rucio/setup-py3.sh')
           urllist = []
           for campaign in campaigns[options.year]:
               query="dasgoclient --query=\"dataset dataset=/"+dataset+"/"+campaign+"*/NANOAOD*\""
@@ -158,10 +159,18 @@ for dataset in xsections.keys():
                    if options.transfer not in sites.split("\n"):
                      print(options.transfer,"not in", sites.split("\n"))
                      print("Initiating transfer")
-                     os.system('rucio add-rule cms:'+pd+' 1 '+options.transfer+' --lifetime 15780000 --comment \'example\' --grouping \'ALL\' --ask-approval --activity \'User AutoApprove\'')
+                     os.system('rucio add-rule cms:'+pd+' 1 '+options.transfer+' '+\
+                     '--lifetime 15780000 '+\
+                     '--comment \'example\' '+\
+                     '--grouping \'ALL\' '+\
+                     '--ask-approval '+\
+                     '--activity \'User AutoApprove\'')
                    query="dasgoclient --query=\"file dataset="+pd+"\""
                    urllist += os.popen(query).read().split("\n")
-     for url in urllist[:]:
+     for url in urllist[:].copy():
+          if '/' not in url: 
+            urllist.remove(url)
+            continue
           urllist[urllist.index(url)]=redirect+url
      print('list lenght:',len(urllist))
      if options.special:

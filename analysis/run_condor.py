@@ -129,7 +129,7 @@ for dataset, info in datadef.items():
     os.environ['METADATA']   = options.metadata
     os.environ['CLUSTER'] = options.cluster
     if options.cluster == 'lpc':
-        jdl_dataset = jdl.copy()
+        jdl_dataset = jdl
         jdl_dataset = jdl_dataset.replace('%SAMPLE%', dataset)
         jdl_dataset = jdl_dataset.replace('%BTCN%', dataset.split('____')[0])
         jdl_dataset = jdl_dataset.replace('%PROCESSOR%', options.processor)

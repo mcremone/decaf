@@ -19,9 +19,9 @@ parser.add_option('-r', '--remove', action='store_true', dest='remove')
 parser.add_option('-t', '--transfer', help='transfer', dest='transfer', default='T1_US_FNAL_Disk')
 (options, args) = parser.parse_args()
 
-#globalredirect = "root://xrootd-cms.infn.it/"
+globalredirect = "root://xrootd-cms.infn.it/"
 #globalredirect = "root://cmsxrootd.fnal.gov/"
-globalredirect = "root://cmsxrootd-site.fnal.gov/"
+#globalredirect = "root://cmsxrootd-site.fnal.gov/"
 campaigns ={}
 campaigns['2016preVFP'] = ['*HIPM*UL2016*JMENano*', '*UL16*JMENano*preVFP*']
 campaigns['2016postVFP'] = ['*-UL2016*JMENano*', '*UL16JMENano*']

@@ -129,13 +129,14 @@ for dataset, info in datadef.items():
     os.environ['METADATA']   = options.metadata
     os.environ['CLUSTER'] = options.cluster
     if options.cluster == 'lpc':
-        jdl = jdl.replace('%SAMPLE%', dataset)
-        jdl = jdl.replace('%BTCN%', dataset.split('____')[0])
-        jdl = jdl.replace('%PROCESSOR%', options.processor)
-        jdl = jdl.replace('%METADATA%', options.metadata)
-        jdl = jdl.replace('%CLUSTER%', options.cluster)
+        jdl_dataset = jdl.copy()
+        jdl_dataset = jdl_dataset.replace('%SAMPLE%', dataset)
+        jdl_dataset = jdl_dataset.replace('%BTCN%', dataset.split('____')[0])
+        jdl_dataset = jdl_dataset.replace('%PROCESSOR%', options.processor)
+        jdl_dataset = jdl_dataset.replace('%METADATA%', options.metadata)
+        jdl_dataset = jdl_dataset.replace('%CLUSTER%', options.cluster)
         jdl_file = open("run.submit", "w") 
-        jdl_file.write(jdl) 
+        jdl_file.write(jdl_dataset) 
         jdl_file.close() 
     os.system('condor_submit run.submit')
 os.system('rm run.submit')

@@ -233,14 +233,33 @@ The options for this script are:
    - Boolean to decide to use public central NanoAODs (if `False`) or private custom NanoAODs (if `True`). Default is `False`.
    - **Usage**: `-c` (no argument needed)
 
+7. **`-t` or `--transfer`**:
+   - When using public central NanoAODs it is advisable to transfer files to the cluster you are running from. For example, when running the code at lxplus, input `T2_CH_CERN` to transfer files. The proper xrootd redirect is automatically used. Default is `T1_US_FNAL_Disk`.
+   - **Usage**: `-t <cluster>`
 
-As an example, to generate the JSON file for all 2017 data:
+
+As an example, to generate the JSON file for all 2017 publis data/MC NanoAODs at KISTI:
 
 ```
-python3 macros/list.py -y 2017 -m 2017 -p 32
+python3 macros/list.py -y 2017 -m 2017 -p 32 -t T2_KR_KISTI
 ```
 
 As a reminder, this script assumes that you are in the `decaf/analysis` directory when running. The output above will be saved in `metadata/2017.json`.
+
+If generating a JSON for public NanoAODs, `rucio` has to be installed in order to initiate and auto-approve data transfers:
+
+```
+source /cvmfs/cms.cern.ch/rucio/setup-py3.sh
+export RUCIO_ACCOUNT=<YOUR_CERN_USERNAME>
+```
+
+when the JSONs are produced, remember to reset the standard decaf environment by sourcing `env.sh`:
+
+```
+cd ..
+source env.sh
+cd analysis
+```
 
 If using the `--custom` option, the script can take several hours to run, so it’s best to use a process manager such as `nohup` or `tmux` to avoid the program crashing in case of a lost connection. For example
 

@@ -121,6 +121,21 @@ cd CMSSW_11_3_4/src
 cmsenv
 ```
 
+If you get an error saying: 
+
+```
+ERROR: Project "CMSSW" version "CMSSW_11_3_4" is not available for arch el9_amd64_gcc12.
+       Please make sure you have used the correct name/version.
+       You can run "scram list $projectname" to get the list of available versions.
+```
+
+Do: 
+
+```
+export SCRAM_ARCH=slc7_amd64_gcc900
+```
+
+and try again. 
 
 
 ### Installing Packages

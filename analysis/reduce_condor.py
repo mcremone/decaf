@@ -64,18 +64,40 @@ if options.cluster == 'lpc':
         os.system('xrdcp -f ../../../../cmssw_11_3_4.tgz root://cmseos.fnal.gov//store/user/'+os.environ['USER']+'/cmssw_11_3_4.tgz')
         os.system('xrdcp -f ../../../../pylocal_3_8.tgz root://cmseos.fnal.gov//store/user/'+os.environ['USER']+'/pylocal_3_8.tgz')
     jdl = """universe = vanilla
-Executable = reduce.sh
+Executable = run.sh
++ApptainerImage = "/cvmfs/singularity.opensciencegrid.org/cmssw/cms:rhel7"
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
-Transfer_Input_Files = reduce.sh
-Output = logs/condor/reduce/out/$ENV(TAG)_$ENV(SAMPLE)_$ENV(VARIABLE)_$(Cluster)_$(Process).stdout
-Error = logs/condor/reduce/err/$ENV(TAG)_$ENV(SAMPLE)_$ENV(VARIABLE)_$(Cluster)_$(Process).stderr
-Log = logs/condor/reduce/log/$ENV(TAG)_$ENV(SAMPLE)_$ENV(VARIABLE)_$(Cluster)_$(Process).log
-TransferOutputRemaps = "$ENV(VARIABLE)_$ENV(SAMPLE).reduced=$ENV(PWD)/$ENV(FOLDER)/$ENV(VARIABLE)--$ENV(SAMPLE).reduced"
-Arguments = $ENV(FOLDER) $ENV(VARIABLE) $ENV(SAMPLE) $ENV(CLUSTER) $ENV(USER)
+Transfer_Input_Files = run.sh
+Output = logs/condor/reduce/out/%TAG%_%SAMPLE%_%VARIABLE%_$(Cluster)_$(Process).stdout
+Error = logs/condor/reduce/err/%TAG%_%SAMPLE%_%VARIABLE%_$(Cluster)_$(Process).stderr
+Log = logs/condor/reduce/log/%TAG%_%SAMPLE%_%VARIABLE%_$(Cluster)_$(Process).log
+TransferOutputRemaps = "%VARIABLE%_%SAMPLE%.reduced=$ENV(PWD)/%FOLDER%/%VARIABLE%--%SAMPLE%.reduced"
+Arguments = %FOLDER% %VARIABLE% %SAMPLE% %CLUSTER% $ENV(USER)
 request_cpus = 16
 request_disk = 10G
 request_memory = 6000
+Queue 1"""
+
+if options.cluster == 'lxplus':
+    if options.copy:
+        os.system('xrdcp -f ../../../../cmssw_11_3_4.tgz root://eosuser.cern.ch//eos/user/'+os.environ['USER'][0] +'/'+ os.environ['USER']+'/cmssw_11_3_4.tgz')
+        os.system('xrdcp -f ../../../../pylocal_3_8.tgz root://eosuser.cern.ch//eos/user/'+os.environ['USER'][0] + '/'+os.environ['USER']+'/pylocal_3_8.tgz')
+    jdl = """universe                = vanilla
+executable              = run.sh
+should_transfer_files   = YES
+when_to_transfer_output = ON_EXIT
+transfer_input_files    = run.sh, /afs/cern.ch/user/m/mcremone/private/x509up
+output                  = logs/condor/reduce/out/$ENV(TAG)_$ENV(SAMPLE)_$ENV(VARIABLE)_$(Cluster)_$(Process).stdout
+error                   = logs/condor/reduce/err/$ENV(TAG)_$ENV(SAMPLE)_$ENV(VARIABLE)_$(Cluster)_$(Process).stderr
+log                     = logs/condor/reduce/log/$ENV(TAG)_$ENV(SAMPLE)_$ENV(VARIABLE)_$(Cluster)_$(Process).log
+TransferOutputRemaps    = "$ENV(VARIABLE)_$ENV(SAMPLE).reduced=$ENV(PWD)/$ENV(FOLDER)/$ENV(VARIABLE)--$ENV(SAMPLE).reduced"
+Arguments               = $ENV(FOLDER) $ENV(VARIABLE) $ENV(SAMPLE) $ENV(CLUSTER) $ENV(USER)
+MY.SingularityImage     = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cat/cmssw-lxplus/cmssw-el7-lxplus:latest/"
+request_cpus            = 16
+request_memory          = 6000
+JobBatchName            = $ENV(VARIABLE)
++JobFlavour             = "tomorrow"
 Queue 1"""
 
 jdl_file = open("reduce.submit", "w") 
@@ -109,5 +131,15 @@ for pdi in pd:
         os.environ['SAMPLE'] = pdi
         os.environ['VARIABLE'] = variable
         os.environ['CLUSTER'] = options.cluster
+        if options.cluster == 'lpc':
+            jdl_dataset = jdl
+            jdl_dataset = jdl_dataset.replace('%TAG%', tag)
+            jdl_dataset = jdl_dataset.replace('%FOLDER%', options.folder)
+            jdl_dataset = jdl_dataset.replace('%SAMPLE%', pdi)
+            jdl_dataset = jdl_dataset.replace('%VARIABLE%', variable)
+            jdl_dataset = jdl_dataset.replace('%CLUSTER%', options.cluster)
+            jdl_file = open("run.submit", "w") 
+            jdl_file.write(jdl_dataset) 
+            jdl_file.close() 
         os.system('condor_submit reduce.submit')
 os.system('rm reduce.submit')

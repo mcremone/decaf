@@ -87,7 +87,7 @@ if options.cluster == 'lxplus':
 executable              = run.sh
 should_transfer_files   = YES
 when_to_transfer_output = ON_EXIT
-transfer_input_files    = run.sh, /afs/cern.ch/user/m/mcremone/private/x509up
+transfer_input_files    = reduce.sh, /afs/cern.ch/user/m/mcremone/private/x509up
 output                  = logs/condor/reduce/out/$ENV(TAG)_$ENV(SAMPLE)_$ENV(VARIABLE)_$(Cluster)_$(Process).stdout
 error                   = logs/condor/reduce/err/$ENV(TAG)_$ENV(SAMPLE)_$ENV(VARIABLE)_$(Cluster)_$(Process).stderr
 log                     = logs/condor/reduce/log/$ENV(TAG)_$ENV(SAMPLE)_$ENV(VARIABLE)_$(Cluster)_$(Process).log

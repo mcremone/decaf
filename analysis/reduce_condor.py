@@ -138,7 +138,7 @@ for pdi in pd:
             jdl_dataset = jdl_dataset.replace('%SAMPLE%', pdi)
             jdl_dataset = jdl_dataset.replace('%VARIABLE%', variable)
             jdl_dataset = jdl_dataset.replace('%CLUSTER%', options.cluster)
-            jdl_file = open("run.submit", "w") 
+            jdl_file = open("reduce.submit", "w") 
             jdl_file.write(jdl_dataset) 
             jdl_file.close() 
         os.system('condor_submit reduce.submit')

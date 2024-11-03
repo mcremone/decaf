@@ -52,7 +52,7 @@ TransferOutputRemaps = "$ENV(VARIABLE).merged=$ENV(PWD)/$ENV(FOLDER)/$ENV(VARIAB
 Arguments = $ENV(FOLDER) $ENV(VARIABLE) $ENV(CLUSTER) $ENV(USER)
 JobBatchName = $ENV(VARIABLE)
 accounting_group=group_cms
-request_cpus = 16
+request_cpus = 8
 Queue 1"""
 
 if options.cluster == 'lpc':
@@ -69,7 +69,7 @@ Error = logs/condor/merge/err/%TAG%_%VARIABLE%_$(Cluster)_$(Process).stderr
 Log = logs/condor/merge/log/%TAG%_%VARIABLE%_$(Cluster)_$(Process).log
 TransferOutputRemaps = "%VARIABLE%.merged=$ENV(PWD)/%FOLDER%/%VARIABLE%.merged"
 Arguments = %FOLDER% %VARIABLE% %CLUSTER% $ENV(USER)
-request_cpus = 16
+request_cpus = 8
 Queue 1"""
 
 if options.cluster == 'lxplus':
@@ -77,7 +77,7 @@ if options.cluster == 'lxplus':
         os.system('xrdcp -f ../../../../cmssw_11_3_4.tgz root://eosuser.cern.ch//eos/user/'+os.environ['USER'][0] +'/'+ os.environ['USER']+'/cmssw_11_3_4.tgz')
         os.system('xrdcp -f ../../../../pylocal_3_8.tgz root://eosuser.cern.ch//eos/user/'+os.environ['USER'][0] + '/'+os.environ['USER']+'/pylocal_3_8.tgz')
     jdl = """universe                = vanilla
-executable              = run.sh
+executable              = merge.sh
 should_transfer_files   = YES
 when_to_transfer_output = ON_EXIT
 transfer_input_files    = merge.sh, /afs/cern.ch/user/m/mcremone/private/x509up
@@ -87,7 +87,7 @@ log                     = logs/condor/merge/log/$ENV(TAG)_$ENV(VARIABLE)_$(Clust
 TransferOutputRemaps    = "$ENV(VARIABLE).merged=$ENV(PWD)/$ENV(FOLDER)/$ENV(VARIABLE).merged"
 Arguments               = $ENV(FOLDER) $ENV(VARIABLE) $ENV(CLUSTER) $ENV(USER)
 MY.SingularityImage     = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cat/cmssw-lxplus/cmssw-el7-lxplus:latest/"
-request_cpus            = 16
+request_cpus            = 8
 JobBatchName            = $ENV(VARIABLE)
 +JobFlavour             = "tomorrow"
 Queue 1"""

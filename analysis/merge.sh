@@ -24,15 +24,16 @@ if [ "${3}" == "kisti" ]; then
     echo "Decaf correctly copied"
     xrdcp -s root://cms-xrdr.private.lo:2094//xrd/store/user/$USER/pylocal_3_8.tgz .
     echo "Python correctly copied"
+fi
     
-if [ "${4}" == "lpc" ]; then
+if [ "${3}" == "lpc" ]; then
     xrdcp -s root://cmseos.fnal.gov//store/user/$USER/cmssw_11_3_4.tgz .
     echo "Decaf correctly copied"
     xrdcp -s root://cmseos.fnal.gov//store/user/$USER/pylocal_3_8.tgz .
     echo "Python correctly copied"
 fi 
 
-if [ "${4}" == "lxplus" ]; then
+if [ "${3}" == "lxplus" ]; then
     export X509_USER_PROXY=x509up
     voms-proxy-info -all
     voms-proxy-info -all -file x509up

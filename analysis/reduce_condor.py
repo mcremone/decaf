@@ -64,11 +64,11 @@ if options.cluster == 'lpc':
         os.system('xrdcp -f ../../../../cmssw_11_3_4.tgz root://cmseos.fnal.gov//store/user/'+os.environ['USER']+'/cmssw_11_3_4.tgz')
         os.system('xrdcp -f ../../../../pylocal_3_8.tgz root://cmseos.fnal.gov//store/user/'+os.environ['USER']+'/pylocal_3_8.tgz')
     jdl = """universe = vanilla
-Executable = run.sh
+Executable = reduce.sh
 +ApptainerImage = "/cvmfs/singularity.opensciencegrid.org/cmssw/cms:rhel7"
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
-Transfer_Input_Files = run.sh
+Transfer_Input_Files = reduce.sh
 Output = logs/condor/reduce/out/%TAG%_%SAMPLE%_%VARIABLE%_$(Cluster)_$(Process).stdout
 Error = logs/condor/reduce/err/%TAG%_%SAMPLE%_%VARIABLE%_$(Cluster)_$(Process).stderr
 Log = logs/condor/reduce/log/%TAG%_%SAMPLE%_%VARIABLE%_$(Cluster)_$(Process).log
@@ -84,7 +84,7 @@ if options.cluster == 'lxplus':
         os.system('xrdcp -f ../../../../cmssw_11_3_4.tgz root://eosuser.cern.ch//eos/user/'+os.environ['USER'][0] +'/'+ os.environ['USER']+'/cmssw_11_3_4.tgz')
         os.system('xrdcp -f ../../../../pylocal_3_8.tgz root://eosuser.cern.ch//eos/user/'+os.environ['USER'][0] + '/'+os.environ['USER']+'/pylocal_3_8.tgz')
     jdl = """universe                = vanilla
-executable              = run.sh
+executable              = reduce.sh
 should_transfer_files   = YES
 when_to_transfer_output = ON_EXIT
 transfer_input_files    = reduce.sh, /afs/cern.ch/user/m/mcremone/private/x509up
@@ -94,8 +94,7 @@ log                     = logs/condor/reduce/log/$ENV(TAG)_$ENV(SAMPLE)_$ENV(VAR
 TransferOutputRemaps    = "$ENV(VARIABLE)_$ENV(SAMPLE).reduced=$ENV(PWD)/$ENV(FOLDER)/$ENV(VARIABLE)--$ENV(SAMPLE).reduced"
 Arguments               = $ENV(FOLDER) $ENV(VARIABLE) $ENV(SAMPLE) $ENV(CLUSTER) $ENV(USER)
 MY.SingularityImage     = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cat/cmssw-lxplus/cmssw-el7-lxplus:latest/"
-request_cpus            = 16
-request_memory          = 6000
+request_cpus            = 8
 JobBatchName            = $ENV(VARIABLE)
 +JobFlavour             = "tomorrow"
 Queue 1"""

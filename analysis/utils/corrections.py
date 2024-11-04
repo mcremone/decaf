@@ -370,6 +370,16 @@ def XY_MET_Correction(year, npv, run, pt, phi, isData):
     npv = ak.where((npv>200),ak.full_like(npv,200),npv)
     pt  = ak.where((pt>1000.),ak.full_like(pt,1000.),pt)
 
+    if '2016' in year:
+        run = ak.where((run<271036),ak.full_like(run,271036),run)
+        run = ak.where((run>284044),ak.full_like(run,284044),run)
+    if '2017' in year:
+        run = ak.where((run<294927),ak.full_like(run,294927),run)
+        run = ak.where((run>306462),ak.full_like(run,306462),run)
+    if '2018' in year:
+        run = ak.where((run<314472),ak.full_like(run,314472),run)
+        run = ak.where((run>325175),ak.full_like(run,325175),run)
+        
     evaluator = correctionlib.CorrectionSet.from_file('data/JetMETCorr/'+year+'_UL/met.json.gz')
 
     if isData:

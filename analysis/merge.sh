@@ -24,10 +24,22 @@ if [ "${3}" == "kisti" ]; then
     echo "Decaf correctly copied"
     xrdcp -s root://cms-xrdr.private.lo:2094//xrd/store/user/$USER/pylocal_3_8.tgz .
     echo "Python correctly copied"
-else
+fi
+    
+if [ "${3}" == "lpc" ]; then
     xrdcp -s root://cmseos.fnal.gov//store/user/$USER/cmssw_11_3_4.tgz .
     echo "Decaf correctly copied"
     xrdcp -s root://cmseos.fnal.gov//store/user/$USER/pylocal_3_8.tgz .
+    echo "Python correctly copied"
+fi 
+
+if [ "${3}" == "lxplus" ]; then
+    export X509_USER_PROXY=x509up
+    voms-proxy-info -all
+    voms-proxy-info -all -file x509up
+    xrdcp -s root://eosuser.cern.ch//eos/user/${USER:0:1}/$USER/cmssw_11_3_4.tgz .
+    echo "Decaf correctly copied"
+    xrdcp -s root://eosuser.cern.ch//eos/user/${USER:0:1}/$USER/pylocal_3_8.tgz .
     echo "Python correctly copied"
 fi
 tar -zxvf cmssw_11_3_4.tgz
@@ -38,7 +50,7 @@ export SCRAM_ARCH=slc7_amd64_gcc900
 cd CMSSW_11_3_4/src
 scramv1 b ProjectRename
 eval `scramv1 runtime -sh` # cmsenv is an alias not on the workers
-export PYTHONPATH=${_CONDOR_SCRATCH_DIR}/site-packages:$PYTHONPATH
+export PYTHONPATH=${_CONDOR_SCRATCH_DIR}/site-packages #:$PYTHONPATH
 export PYTHONPATH=$(find ${_CONDOR_SCRATCH_DIR}/site-packages/ -name *.egg |tr '\n' ':')$PYTHONPATH
 export PYTHONWARNINGS="ignore"
 echo "Updated python path: " $PYTHONPATH

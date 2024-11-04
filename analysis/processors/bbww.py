@@ -61,7 +61,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                 'HBHENoiseIsoFilter',
                 'EcalDeadCellTriggerPrimitiveFilter',
                 'BadPFMuonFilter',
-                # 'BadPFMuonDzFilter',
+                'BadPFMuonDzFilter',
                 'eeBadScFilter'
                 ],
         

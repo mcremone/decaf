@@ -1,5 +1,6 @@
 from coffea.util import save
 import numpy as np
+import os
 
 def match(a, b, val):
     combinations = a.cross(b, nested=True)
@@ -78,4 +79,5 @@ common = {}
 common['match'] = match
 common['sigmoid'] = sigmoid
 common['btagWPs'] = btagWPs
-save(common, 'data/common.coffea')
+path = "decaf/analysis/data/" if "srv" in os.getcwd() else "data/"   ### to make it run with coffea4bees
+save(common, f'{path}/common.coffea')

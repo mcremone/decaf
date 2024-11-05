@@ -28,7 +28,7 @@ campaigns['2018'] = ['*UL*18*JMENano*']
 
 eos = "root://dcache-cms-xrootd.desy.de:1094/"
 globalredirect = {}
-globalredirect['T2_KR_KISTI'] = "root://cms-t2-se01.sdfarm.kr:1094/"
+globalredirect['T2_KR_KISTI'] = "root://cms-t2-se01.sdfarm.kr:1096/"
 globalredirect['T2_CH_CERN'] = "root://eoscms.cern.ch:1094/"
 globalredirect['T1_US_FNAL_Disk'] = "root://cmsxrootd.fnal.gov/"
 #globalredirect = "root://cmsxrootd-site.fnal.gov/"

@@ -84,8 +84,6 @@ Queue 1"""
 
 if options.cluster == 'lxplus':
     if options.copy:
-        #os.system('ls /eosuser.cern.ch//eos/user/'+os.environ['USER'][0] + '/' + os.environ['USER'])
-        os.system('echo $PWD')
         os.system('xrdcp -f ../../../../cmssw_11_3_4.tgz root://eosuser.cern.ch//eos/user/'+os.environ['USER'][0] +'/'+ os.environ['USER']+'/cmssw_11_3_4.tgz')
         os.system('xrdcp -f ../../../../pylocal_3_8.tgz root://eosuser.cern.ch//eos/user/'+os.environ['USER'][0] + '/'+os.environ['USER']+'/pylocal_3_8.tgz')
     jdl = """universe                = vanilla

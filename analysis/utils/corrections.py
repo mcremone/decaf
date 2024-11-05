@@ -15,16 +15,18 @@ import json
 
 import hist
 
+path = "decaf/analysis/data/" if "srv" in os.getcwd() else "data/"   ### to make it run with coffea4bees
+
 ###
 # MET trigger efficiency SFs, 2017/18 from monojet. Depends on recoil.
 ###
 
 def get_met_trig_weight(year, met):
     met_trig_hists = {
-        '2016postVFP': "data/trigger_eff/metTriggerEfficiency_recoil_monojet_TH1F.root:hden_monojet_recoil_clone_passed",
-        '2016preVFP': "data/trigger_eff/metTriggerEfficiency_recoil_monojet_TH1F.root:hden_monojet_recoil_clone_passed",
-        '2017': "data/trigger_eff/met_trigger_sf.root:120pfht_hltmu_1m_2017",
-        '2018': "data/trigger_eff/met_trigger_sf.root:120pfht_hltmu_1m_2018"
+        '2016postVFP': f"{path}/trigger_eff/metTriggerEfficiency_recoil_monojet_TH1F.root:hden_monojet_recoil_clone_passed",
+        '2016preVFP': f"{path}/trigger_eff/metTriggerEfficiency_recoil_monojet_TH1F.root:hden_monojet_recoil_clone_passed",
+        '2017': f"{path}/trigger_eff/met_trigger_sf.root:120pfht_hltmu_1m_2017",
+        '2018': f"{path}/trigger_eff/met_trigger_sf.root:120pfht_hltmu_1m_2018"
     }
     corr = convert.from_uproot_THx(met_trig_hists[year])
     evaluator = corr.to_evaluator()
@@ -47,7 +49,7 @@ def get_met_trig_weight(year, met):
 ####
 
 def get_ele_loose_id_sf (year, eta, pt):
-    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/electron.json.gz')
+    evaluator = correctionlib.CorrectionSet.from_file(f'{path}/EGammaSF/'+year+'_UL/electron.json.gz')
 
     flateta, counts = ak.flatten(eta), ak.num(eta)
     
@@ -59,7 +61,7 @@ def get_ele_loose_id_sf (year, eta, pt):
     return ak.unflatten(weight, counts=counts)
 
 def get_ele_tight_id_sf (year, eta, pt):
-    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/electron.json.gz')
+    evaluator = correctionlib.CorrectionSet.from_file(f'{path}/EGammaSF/'+year+'_UL/electron.json.gz')
 
     flateta, counts = ak.flatten(eta), ak.num(eta)
     
@@ -80,10 +82,10 @@ def get_ele_tight_id_sf (year, eta, pt):
 def get_ele_trig_weight(year, eta, pt):
     #From Rishabh: https://github.com/rishabhCMS/decaf/tree/new_coffea/analysis/data/trigger_eff_UL/UL_SingleElectron
     ele_trig_hists = {
-        '2016postVFP': "data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016postVFP.root:EGamma_SF2D", 
-        '2016preVFP' : "data/ElectronTrigEff/egammaEffi.txt_EGM2D-2016preVFP.root:EGamma_SF2D",
-        '2017': "data/ElectronTrigEff/egammaEffi.txt_EGM2D-2017.root:EGamma_SF2D",
-        '2018': "data/ElectronTrigEff/egammaEffi.txt_EGM2D-2018.root:EGamma_SF2D" 
+        '2016postVFP': f"{path}/ElectronTrigEff/egammaEffi.txt_EGM2D-2016postVFP.root:EGamma_SF2D", 
+        '2016preVFP' : f"{path}/ElectronTrigEff/egammaEffi.txt_EGM2D-2016preVFP.root:EGamma_SF2D",
+        '2017': f"{path}/ElectronTrigEff/egammaEffi.txt_EGM2D-2017.root:EGamma_SF2D",
+        '2018': f"{path}/ElectronTrigEff/egammaEffi.txt_EGM2D-2018.root:EGamma_SF2D" 
     }
     corr = convert.from_uproot_THx(ele_trig_hists[year])
     evaluator = corr.to_evaluator()
@@ -106,7 +108,7 @@ def get_mu_trig_weight(year, eta, pt):
     #Using weights for IsoMuX
     #Scale factors from (and similar for other years): https://gitlab.cern.ch/cms-muonPOG/muonefficiencies/-/tree/master/Run2/UL/2018/2018_trigger?ref_type=heads
     
-    evaluator = correctionlib.CorrectionSet.from_file('data/MuonTrigEff/'+year+'/Efficiencies_muon_generalTracks_Z_Run'+year+'_UL_SingleMuonTriggers_schemaV2.json')
+    evaluator = correctionlib.CorrectionSet.from_file(f'{path}/MuonTrigEff/'+year+'/Efficiencies_muon_generalTracks_Z_Run'+year+'_UL_SingleMuonTriggers_schemaV2.json')
 
     pt = ak.where(pt < 26, 26, pt) 
     pt = ak.where(pt > 200, 200, pt) 
@@ -129,10 +131,10 @@ def get_mu_trig_weight(year, eta, pt):
 
 def get_ele_reco_sf_below20(year, eta, pt):
     ele_reco_files_below20 = {
-        '2016postVFP': "data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2016postVFP.root:EGamma_SF2D",
-        '2016preVFP': "data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2016preVFP.root:EGamma_SF2D",
-        '2017': "data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2017.root:EGamma_SF2D",
-        '2018': "data/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2018.root:EGamma_SF2D"
+        '2016postVFP': f"{path}/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2016postVFP.root:EGamma_SF2D",
+        '2016preVFP': f"{path}/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2016preVFP.root:EGamma_SF2D",
+        '2017': f"{path}/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2017.root:EGamma_SF2D",
+        '2018': f"{path}/ElectronRecoSF/egammaEffi_ptBelow20.txt_EGM2D_UL2018.root:EGamma_SF2D"
     }
 
     corr = convert.from_uproot_THx(ele_reco_files_below20[year])
@@ -153,10 +155,10 @@ def get_ele_reco_sf_below20(year, eta, pt):
 
 def get_ele_reco_sf_above20(year, eta, pt):
     ele_reco_files_above20 = {
-        '2016postVFP': "data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2016postVFP.root:EGamma_SF2D",
-        '2016preVFP': "data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2016preVFP.root:EGamma_SF2D",
-        '2017': "data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2017.root:EGamma_SF2D",
-        '2018': "data/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2018.root:EGamma_SF2D"
+        '2016postVFP': f"{path}/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2016postVFP.root:EGamma_SF2D",
+        '2016preVFP': f"{path}/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2016preVFP.root:EGamma_SF2D",
+        '2017': f"{path}/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2017.root:EGamma_SF2D",
+        '2018': f"{path}/ElectronRecoSF/egammaEffi_ptAbove20.txt_EGM2D_UL2018.root:EGamma_SF2D"
     }
     
     corr = convert.from_uproot_THx(ele_reco_files_above20[year])
@@ -184,7 +186,7 @@ def get_ele_reco_sf_above20(year, eta, pt):
 ####
 
 def get_pho_tight_id_sf(year, eta, pt):
-    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/photon.json.gz')
+    evaluator = correctionlib.CorrectionSet.from_file(f'{path}/EGammaSF/'+year+'_UL/photon.json.gz')
 
     flateta, counts = ak.flatten(eta), ak.num(eta)
 
@@ -197,7 +199,7 @@ def get_pho_tight_id_sf(year, eta, pt):
 
 
 def get_pho_loose_id_sf(year, eta, pt):
-    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/photon.json.gz')
+    evaluator = correctionlib.CorrectionSet.from_file(f'{path}/EGammaSF/'+year+'_UL/photon.json.gz')
 
     flateta, counts = ak.flatten(eta), ak.num(eta)
     
@@ -216,7 +218,7 @@ def get_pho_loose_id_sf(year, eta, pt):
 # 
 
 #def get_pho_csev_sf(year, eta, pt):
-#    evaluator = correctionlib.CorrectionSet.from_file('data/EGammaSF/'+year+'_UL/photon.json.gz')
+#    evaluator = correctionlib.CorrectionSet.from_file(f'{path}/EGammaSF/'+year+'_UL/photon.json.gz')
 #
 #    flateta, counts = ak.flatten(eta), ak.num(eta)
 #    flatpt = ak.flatten(pt)
@@ -232,10 +234,10 @@ def get_pho_loose_id_sf(year, eta, pt):
 
 def get_pho_trig_weight(year, pt):
     pho_trig_files = {
-        '2016postVFP': "data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root:hden_photonpt_clone_passed",
-        '2016preVFP': "data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root:hden_photonpt_clone_passed",
-        "2017": "data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root:hden_photonpt_clone_passed",
-        "2018": "data/trigger_eff/photonTriggerEfficiency_photon_TH1F.root:hden_photonpt_clone_passed"
+        '2016postVFP': f"{path}/trigger_eff/photonTriggerEfficiency_photon_TH1F.root:hden_photonpt_clone_passed",
+        '2016preVFP': f"{path}/trigger_eff/photonTriggerEfficiency_photon_TH1F.root:hden_photonpt_clone_passed",
+        "2017": f"{path}/trigger_eff/photonTriggerEfficiency_photon_TH1F.root:hden_photonpt_clone_passed",
+        "2018": f"{path}/trigger_eff/photonTriggerEfficiency_photon_TH1F.root:hden_photonpt_clone_passed"
     }
 
     corr = convert.from_uproot_THx(pho_trig_files[year])
@@ -255,7 +257,7 @@ def get_pho_trig_weight(year, pt):
 ####
 
 def get_mu_loose_id_sf (year, eta, pt):
-    evaluator = correctionlib.CorrectionSet.from_file('data/MuonSF/'+year+'_UL/muon_Z.json.gz')
+    evaluator = correctionlib.CorrectionSet.from_file(f'{path}/MuonSF/'+year+'_UL/muon_Z.json.gz')
 
     eta = ak.where((eta>2.399), ak.full_like(eta,2.399), eta)
     flateta, counts = ak.flatten(eta), ak.num(eta)
@@ -271,7 +273,7 @@ def get_mu_loose_id_sf (year, eta, pt):
     return ak.unflatten(weight, counts=counts)
 
 def get_mu_tight_id_sf (year, eta, pt):
-    evaluator = correctionlib.CorrectionSet.from_file('data/MuonSF/'+year+'_UL/muon_Z.json.gz')
+    evaluator = correctionlib.CorrectionSet.from_file(f'{path}/MuonSF/'+year+'_UL/muon_Z.json.gz')
     
     eta = ak.where((eta>2.399), ak.full_like(eta,2.399), eta)
     flateta, counts = ak.flatten(eta), ak.num(eta)
@@ -297,7 +299,7 @@ def get_mu_tight_id_sf (year, eta, pt):
 ####
 
 def get_mu_loose_iso_sf (year, eta, pt):
-    evaluator = correctionlib.CorrectionSet.from_file('data/MuonSF/'+year+'_UL/muon_Z.json.gz')
+    evaluator = correctionlib.CorrectionSet.from_file(f'{path}/MuonSF/'+year+'_UL/muon_Z.json.gz')
 
     eta = ak.where((eta>2.399), ak.full_like(eta,2.399), eta)
     flateta, counts = ak.flatten(eta), ak.num(eta)
@@ -310,7 +312,7 @@ def get_mu_loose_iso_sf (year, eta, pt):
     return ak.unflatten(weight, counts=counts)
 
 def get_mu_tight_iso_sf (year, eta, pt):
-    evaluator = correctionlib.CorrectionSet.from_file('data/MuonSF/'+year+'_UL/muon_Z.json.gz')
+    evaluator = correctionlib.CorrectionSet.from_file(f'{path}/MuonSF/'+year+'_UL/muon_Z.json.gz')
 
     eta = ak.where((eta>2.399), ak.full_like(eta,2.399), eta)
     flateta, counts = ak.flatten(eta), ak.num(eta)
@@ -331,11 +333,11 @@ tag = 'roccor.Run2.v5'
 get_mu_rochester_sf = {}
 for year in ['2016postVFP', '2016preVFP', '2017','2018']:
     if '2016postVFP' in year: 
-        fname = f'data/{tag}/RoccoR2016bUL.txt'
+        fname = f'{path}/{tag}/RoccoR2016bUL.txt'
     elif '2016preVFP' in year:  
-        fname = f'data/{tag}/RoccoR2016aUL.txt'
+        fname = f'{path}/{tag}/RoccoR2016aUL.txt'
     else:
-        fname = f'data/{tag}/RoccoR{year}UL.txt'
+        fname = f'{path}/{tag}/RoccoR{year}UL.txt'
     sfs = lookup_tools.txt_converters.convert_rochester_file(fname,loaduncs=True)
     get_mu_rochester_sf[year] = lookup_tools.rochester_lookup.rochester_lookup(sfs)
 
@@ -350,7 +352,7 @@ def get_pu_weight(year, trueint):
                   '2017': 'Collisions17_UltraLegacy_goldenJSON',
                   '2016preVFP': 'Collisions16_UltraLegacy_goldenJSON',
                   '2016postVFP':'Collisions16_UltraLegacy_goldenJSON'}
-    evaluator = correctionlib.CorrectionSet.from_file('data/PUweight/'+year+'_UL/puWeights.json.gz')
+    evaluator = correctionlib.CorrectionSet.from_file(f'{path}/PUweight/'+year+'_UL/puWeights.json.gz')
     weight = evaluator[correction[year]].evaluate(trueint, 'nominal')
 
     return weight
@@ -370,7 +372,20 @@ def XY_MET_Correction(year, npv, run, pt, phi, isData):
     npv = ak.where((npv>200),ak.full_like(npv,200),npv)
     pt  = ak.where((pt>1000.),ak.full_like(pt,1000.),pt)
 
-    evaluator = correctionlib.CorrectionSet.from_file('data/JetMETCorr/'+year+'_UL/met.json.gz')
+    if '2016preVFP' in year:
+        #run = ak.where((run<271036),ak.full_like(run,271036),run)
+        run = ak.where((run>278771),ak.full_like(run,278771),run)
+    if '2016postVFP' in year:
+        #run = ak.where((run<271036),ak.full_like(run,271036),run)
+        run = ak.where((run>284045),ak.full_like(run,284045),run)
+    if '2017' in year:
+        #run = ak.where((run<294927),ak.full_like(run,294927),run)
+        run = ak.where((run>306463),ak.full_like(run,306463),run)
+    if '2018' in year:
+        #run = ak.where((run<314472),ak.full_like(run,314472),run)
+        run = ak.where((run>325274),ak.full_like(run,325274),run)
+        
+    evaluator = correctionlib.CorrectionSet.from_file(f'{path}/JetMETCorr/'+year+'_UL/met.json.gz')
 
     if isData:
         corrected_pt = evaluator['pt_metphicorr_pfmet_data'].evaluate(pt,phi,npv,run)
@@ -396,10 +411,10 @@ def XY_MET_Correction(year, npv, run, pt, phi, isData):
 
 def get_nlo_ewk_weight(process, boson_pt):
     nlo_ewk_hists = {
-        'dy': "data/vjets_SFs/merged_kfactors_zjets.root:kfactor_monojet_ewk",
-        'w': "data/vjets_SFs/merged_kfactors_wjets.root:kfactor_monojet_ewk",
-        'z': "data/vjets_SFs/merged_kfactors_zjets.root:kfactor_monojet_ewk",
-        'a': "data/vjets_SFs/merged_kfactors_gjets.root:kfactor_monojet_ewk"
+        'dy': f"{path}/vjets_SFs/merged_kfactors_zjets.root:kfactor_monojet_ewk",
+        'w': f"{path}/vjets_SFs/merged_kfactors_wjets.root:kfactor_monojet_ewk",
+        'z': f"{path}/vjets_SFs/merged_kfactors_zjets.root:kfactor_monojet_ewk",
+        'a': f"{path}/vjets_SFs/merged_kfactors_gjets.root:kfactor_monojet_ewk"
     }
     boson_pt = ak.fill_none(boson_pt, 0.)
     boson_pt = ak.where((boson_pt<150.01), ak.full_like(boson_pt,150.01), boson_pt)
@@ -499,17 +514,17 @@ def get_nnlo_nlo_weight(year, process, boson_pt):
     for year in ['2016postVFP', '2016preVFP', '2017','2018']:
         if '2016' in year:
             nnlo_file = {
-                'dy': "data/Vboson_Pt_Reweighting/2016/TheoryXS_eej_madgraph_2016.root",
-                'w': "data/Vboson_Pt_Reweighting/2016/TheoryXS_evj_madgraph_2016.root",
-                'z': "data/Vboson_Pt_Reweighting/2016/TheoryXS_vvj_madgraph_2016.root",
-                'a': "data/Vboson_Pt_Reweighting/2016/TheoryXS_aj_madgraph_2016.root"
+                'dy': f"{path}/Vboson_Pt_Reweighting/2016/TheoryXS_eej_madgraph_2016.root",
+                'w': f"{path}/Vboson_Pt_Reweighting/2016/TheoryXS_evj_madgraph_2016.root",
+                'z': f"{path}/Vboson_Pt_Reweighting/2016/TheoryXS_vvj_madgraph_2016.root",
+                'a': f"{path}/Vboson_Pt_Reweighting/2016/TheoryXS_aj_madgraph_2016.root"
             }
         else:
             nlo_file = {
-                'dy': "data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_eej_madgraph_"+year+".root",
-                'w': "data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_evj_madgraph_"+year+".root",
-                'z': "data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_vvj_madgraph_"+year+".root",
-                'a': "data/Vboson_Pt_Reweighting/"+year+"/TheoryXS_aj_madgraph_"+year+".root"
+                'dy': f"{path}/Vboson_Pt_Reweighting/"+year+"/TheoryXS_eej_madgraph_"+year+".root",
+                'w': f"{path}/Vboson_Pt_Reweighting/"+year+"/TheoryXS_evj_madgraph_"+year+".root",
+                'z': f"{path}/Vboson_Pt_Reweighting/"+year+"/TheoryXS_vvj_madgraph_"+year+".root",
+                'a': f"{path}/Vboson_Pt_Reweighting/"+year+"/TheoryXS_aj_madgraph_"+year+".root"
             }
 
     boson_pt = ak.fill_none(boson_pt, 0.)
@@ -539,7 +554,7 @@ def get_ttbar_weight(pt):
 # https://github.com/jennetd/hbb-coffea/blob/master/boostedhiggs/corrections.py
 # Renamed copy of corrected_msoftdrop() function
 
-msdcorr = correctionlib.CorrectionSet.from_file('data/msdcorr.json')
+msdcorr = correctionlib.CorrectionSet.from_file(f'{path}/msdcorr.json')
 
 def get_msd_corr(fatjets):
     msdraw = np.sqrt(
@@ -576,12 +591,12 @@ class BTagCorrector:
 
         btvjson = {}
         btvjson['deepflav'] = {
-            'incl': correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepJet_incl"],
-            'comb': correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepJet_comb"],
+            'incl': correctionlib.CorrectionSet.from_file(f'{path}/BtagSF/'+year+'_UL/btagging.json.gz')["deepJet_incl"],
+            'comb': correctionlib.CorrectionSet.from_file(f'{path}/BtagSF/'+year+'_UL/btagging.json.gz')["deepJet_comb"],
         }
         btvjson['deepcsv'] = {
-            'incl': correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepCSV_incl"],
-            'comb': correctionlib.CorrectionSet.from_file('data/BtagSF/'+year+'_UL/btagging.json.gz')["deepCSV_comb"],
+            'incl': correctionlib.CorrectionSet.from_file(f'{path}/BtagSF/'+year+'_UL/btagging.json.gz')["deepCSV_incl"],
+            'comb': correctionlib.CorrectionSet.from_file(f'{path}/BtagSF/'+year+'_UL/btagging.json.gz')["deepCSV_comb"],
         }
         self.sf = btvjson[tagger]
 
@@ -591,7 +606,7 @@ class BTagCorrector:
             '2017': 'btageff2017.merged',
             '2018': 'btageff2018.merged',
         }
-        filename = 'hists/'+files[year]
+        filename = f'{path}/../hists/'+files[year]
         btag_file = load(filename)
         for k in btag_file[tagger]:
             try:
@@ -803,7 +818,7 @@ jec_name_map = {
 
 def jet_factory_factory(files):
     ext = extractor()
-    directory='data/jerc'
+    directory=f'{path}/jerc'
     for filename in files:
         ext.add_weight_sets([f"* * {directory+'/'+filename}"])
     ext.finalize()
@@ -1058,4 +1073,4 @@ corrections = {
 }
 
 
-save(corrections, 'data/corrections.coffea')
+save(corrections, f'{path}/corrections.coffea')

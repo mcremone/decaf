@@ -23,19 +23,19 @@ if [ "${4}" == "kisti" ]; then
     echo "Decaf correctly copied"
     xrdcp -s root://cms-xrdr.private.lo:2094//xrd/store/user/$USER/pylocal_3_8.tgz .
     echo "Python correctly copied"
+fi 
 
 if [ "${4}" == "lpc" ]; then
     xrdcp -s root://cmseos.fnal.gov//store/user/$USER/cmssw_11_3_4.tgz .
     echo "Decaf correctly copied"
     xrdcp -s root://cmseos.fnal.gov//store/user/$USER/pylocal_3_8.tgz .
     echo "Python correctly copied"
+fi 
 
 if [ "${4}" == "lxplus" ]; then
-    singularity exec --contain --ipc --pid \
-                --home $PWD:/srv \
-                --bind /cvmfs \
-                /cvmfs/singularity.opensciencegrid.org/opensciencegrid/osgvo:el7 \
-                /bin/cat /etc/redhat-release
+    export X509_USER_PROXY=x509up
+    voms-proxy-info -all
+    voms-proxy-info -all -file x509up
     xrdcp -s root://eosuser.cern.ch//eos/user/${USER:0:1}/$USER/cmssw_11_3_4.tgz .
     echo "Decaf correctly copied"
     xrdcp -s root://eosuser.cern.ch//eos/user/${USER:0:1}/$USER/pylocal_3_8.tgz .
@@ -49,7 +49,7 @@ export SCRAM_ARCH=slc7_amd64_gcc900
 cd CMSSW_11_3_4/src
 scramv1 b ProjectRename
 eval `scramv1 runtime -sh` # cmsenv is an alias not on the workers
-export PYTHONPATH=${_CONDOR_SCRATCH_DIR}/site-packages:$PYTHONPATH
+export PYTHONPATH=${_CONDOR_SCRATCH_DIR}/site-packages #:$PYTHONPATH
 export PYTHONPATH=$(find ${_CONDOR_SCRATCH_DIR}/site-packages/ -name *.egg |tr '\n' ':')$PYTHONPATH
 export PYTHONWARNINGS="ignore"
 echo "Updated python path: " $PYTHONPATH
@@ -58,4 +58,3 @@ echo "python3 run.py --metadata ${1} --dataset ${2} --processor ${3}"
 python3 run.py --metadata ${1} --dataset ${2} --processor ${3}
 ls hists/${3}/${2}.futures
 cp hists/${3}/${2}.futures ${_CONDOR_SCRATCH_DIR}/${3}_${2}.futures
-

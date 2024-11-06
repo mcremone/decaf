@@ -1,8 +1,3 @@
-Readme 
-
-
-
-
 <img src="https://user-images.githubusercontent.com/10731328/193421563-cf992d8b-8e5e-4530-9179-7dbd507d2e02.png" width="350"/>
 
 # **D**ark matter **E**xperience with the **C**offea **A**nalysis **F**ramework
@@ -22,10 +17,23 @@ kinit <USERNAME>@FNAL.GOV
 ssh <USERNAME>@cmslpc-el9.fnal.gov
 ```
 
-The CMSSW version used runs on slc7. You'll need to setup the correct OS environment using [singularity](https://cms-sw.github.io/singularity.html) (more LPC documentation [here](https://uscms.org/uscms_at_work/computing/setup/setup_software.shtml#apptainer)):
+The CMSSW version used runs on slc7. You'll need to setup the correct OS environment using [singularity](https://cms-sw.github.io/singularity.html) (more LPC documentation [here](https://uscms.org/uscms_at_work/computing/setup/setup_software.shtml#apptainer)). First you need to clone `lpc-scripts` in your home area:
 
 ```
-cmssw-el7 -p --bind `readlink $HOME` --bind `readlink -f ${HOME}/nobackup/` --bind /uscms_data --bind /cvmfs -- /bin/bash -l
+cd ~
+git clone https://github.com/FNALLPC/lpc-scripts
+```
+
+Then you are going to edit your `.bashrc`, adding the following line:
+
+```
+source ~/lpc-scripts/call_host.sh
+```
+
+Now you should log out and log back in for the changes to take effect. To start the container use the following command. 
+
+```
+cmssw-el7 -p --bind `readlink $HOME` --bind `readlink -f ${HOME}/nobackup/` --bind /uscms_data --bind /cvmfs -- /bin/bash
 ```
 
 Install `CMSSW_11_3_4` in your `nobackup` area:
@@ -67,21 +75,67 @@ cmsenv
 
 ---
 
-### Lxplus Setup 
+### LXPLUS Setup 
 
 First, log into lxplus: 
-ssh -Y <USERNAME>@lxplus.cern.ch 
+
+```
+ssh -Y <USERNAME>@lxplus.cern.ch
+```
 
 The CMSSW version used runs on slc7. You'll need to setup the correct OS environment using [singularity](https://cms-sw.github.io/singularity.html). 
-On lxplus, this can be done with: 
-cmssw-el7 
+On lxplus, this can be done by following the instructions at [this link](https://gitlab.cern.ch/cms-cat/cmssw-lxplus/-/blob/master/README.md#usage). Essentially you need to create a script, called `start_el7.sh`, that looks like this:
+
+```
+#!/bin/bash
+export APPTAINER_BINDPATH=/afs,/cvmfs,/cvmfs/grid.cern.ch/etc/grid-security:/etc/grid-security,/cvmfs/grid.cern.ch/etc/grid-security/vomses:/etc/vomses,/eos,/etc/pki/ca-trust,/etc/tnsnames.ora,/run/user,/tmp,/var/run/user,/etc/sysconfig,/etc:/orig/etc
+schedd=`myschedd show -j | jq .currentschedd | tr -d '"'`
+
+apptainer -s exec /cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cat/cmssw-lxplus/cmssw-el7-lxplus:latest/ sh -c "source /app/setupCondor.sh && export _condor_SCHEDD_HOST=$schedd && export _condor_SCHEDD_NAME=$schedd && export _condor_CREDD_HOST=$schedd && /bin/bash  "
+```
+
+You will make the script executable and you will run it:
+
+```
+./start_el7.sh
+```
+
+When doing that, you may get an error like this:
+
+```
+2024/10/21 23:12:38 [ERROR] - HTTP code: 404: Requested user (mcremone) is not known in pool share
+```
+
+If that is the case, simply bump to a better schedd by doing:
+
+```
+myschedd bump
+```
 
 Install `CMSSW_11_3_4` in your home directory:
+
+```
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 cmsrel CMSSW_11_3_4
 cd CMSSW_11_3_4/src
 cmsenv
+```
 
+If you get an error saying: 
+
+```
+ERROR: Project "CMSSW" version "CMSSW_11_3_4" is not available for arch el9_amd64_gcc12.
+       Please make sure you have used the correct name/version.
+       You can run "scram list $projectname" to get the list of available versions.
+```
+
+Do: 
+
+```
+export SCRAM_ARCH=slc7_amd64_gcc900
+```
+
+and try again. 
 
 
 ### Installing Packages
@@ -97,6 +151,15 @@ cd HiggsAnalysis/CombinedLimit
 git fetch origin
 git checkout v9.1.0 # current recommeneded tag (Jan 2024)
 scramv1 b clean; scramv1 b # always make a clean build
+```
+
+Also install `CombineHarvester`:
+```
+cd $CMSSW_BASE/src
+git clone https://github.com/cms-analysis/CombineHarvester.git CombineHarvester
+cd CombineHarvester
+git checkout v2.1.0
+scram b
 ```
 
 Fork this repo on github and clone it into your `CMSSW_11_3_4/src` directory:
@@ -127,13 +190,19 @@ source /cvmfs/cms.cern.ch/cmsset_default.sh
 Singularity on LPC:
 
 ```
-cmssw-el7 -p --bind `readlink $HOME` --bind `readlink -f ${HOME}/nobackup/` --bind /uscms_data --bind /cvmfs -- /bin/bash -l
+cmssw-el7 -p --bind `readlink $HOME` --bind `readlink -f ${HOME}/nobackup/` --bind /uscms_data --bind /cvmfs -- /bin/bash
 ```
 
 Singularity on KISTI:
 
 ```
 setup_el7
+```
+
+Singularity on LXPLUS:
+
+```
+./start_el7.sh
 ```
 
 Then, go to where you installed CMSSW and do:
@@ -179,14 +248,33 @@ The options for this script are:
    - Boolean to decide to use public central NanoAODs (if `False`) or private custom NanoAODs (if `True`). Default is `False`.
    - **Usage**: `-c` (no argument needed)
 
+7. **`-t` or `--transfer`**:
+   - When using public central NanoAODs it is advisable to transfer files to the cluster you are running from. For example, when running the code at lxplus, input `T2_CH_CERN` to transfer files. The proper xrootd redirect is automatically used. Default is `T1_US_FNAL_Disk`.
+   - **Usage**: `-t <cluster>`
 
-As an example, to generate the JSON file for all 2017 data:
+
+As an example, to generate the JSON file for all 2017 publis data/MC NanoAODs at KISTI:
 
 ```
-python3 macros/list.py -y 2017 -m 2017 -p 32
+python3 macros/list.py -y 2017 -m 2017 -p 32 -t T2_KR_KISTI
 ```
 
 As a reminder, this script assumes that you are in the `decaf/analysis` directory when running. The output above will be saved in `metadata/2017.json`.
+
+If generating a JSON for public NanoAODs, `rucio` has to be installed in order to initiate and auto-approve data transfers:
+
+```
+source /cvmfs/cms.cern.ch/rucio/setup-py3.sh
+export RUCIO_ACCOUNT=<YOUR_CERN_USERNAME>
+```
+
+when the JSONs are produced, remember to reset the standard decaf environment by sourcing `env.sh`:
+
+```
+cd ..
+source env.sh
+cd analysis
+```
 
 If using the `--custom` option, the script can take several hours to run, so it’s best to use a process manager such as `nohup` or `tmux` to avoid the program crashing in case of a lost connection. For example
 
@@ -204,7 +292,7 @@ The `nohup` command is useful and recommended for running most scripts, but you 
 MC b-tagging efficiencies are needed by most of the analyses to compute the b-tag event weight, once such efficiencies are corrected with the POG-provided b-tag SFs. To compute them, we first need to run the `common` module in `util`:
 
 ```
-python utils/common.py
+python3 utils/common.py
 ```
 
 This will generate a series of auxiliary functions and information, like the AK4 b-tagging working points, and it will save such information in a `.coffea` file in the `data` folder. AK4 b-tagging working points are essential to measure the MC efficiencies and they are used by the `btag` processor in the `processors` folder. To generate the processor file: 
@@ -256,7 +344,7 @@ The options for this script are the same as for run.py, with the addition of:
    - **Usage**: `-t` (no argument needed)
 
 3. **`-x` or `--copy`**:
-   - Copies these two tarballs to your EOS area. For example, to run the same setup but for a different year you won’t need to tar and copy again. You can simply do: `python run_condor.py -p btag2017 -m 2017 -d QCD -c kisti`
+   - Copies these two tarballs to your EOS area. For example, to run the same setup but for a different year you won’t need to tar and copy again. You can simply do: `python3 run_condor.py -p btag2017 -m 2017 -d QCD -c kisti`
    - **Usage**: `-x` (no argument needed))
 
 You can check the status of your HTCondor jobs by doing:
@@ -272,7 +360,7 @@ Note that in order to use the condor scripts, you need to change the name of the
 After obtaining all the histograms, a first step of data reduction is needed. This step is achieved by running the `reduce.py` script:
 
 ```
-python reduce.py -f hists/btag2018
+python3 reduce.py -f hists/btag2018
 ```
 
 The options of this script are:

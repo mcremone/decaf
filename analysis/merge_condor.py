@@ -52,7 +52,7 @@ TransferOutputRemaps = "$ENV(VARIABLE).merged=$ENV(PWD)/$ENV(FOLDER)/$ENV(VARIAB
 Arguments = $ENV(FOLDER) $ENV(VARIABLE) $ENV(CLUSTER) $ENV(USER)
 JobBatchName = $ENV(VARIABLE)
 accounting_group=group_cms
-request_cpus = 16
+request_cpus = 8
 Queue 1"""
 
 if options.cluster == 'lpc':
@@ -64,12 +64,32 @@ Executable = merge.sh
 Should_Transfer_Files = YES
 WhenToTransferOutput = ON_EXIT
 Transfer_Input_Files = merge.sh
-Output = logs/condor/merge/out/$ENV(TAG)_$ENV(VARIABLE)_$(Cluster)_$(Process).stdout
-Error = logs/condor/merge/err/$ENV(TAG)_$ENV(VARIABLE)_$(Cluster)_$(Process).stderr
-Log = logs/condor/merge/log/$ENV(TAG)_$ENV(VARIABLE)_$(Cluster)_$(Process).log
-TransferOutputRemaps = "$ENV(VARIABLE).merged=$ENV(PWD)/$ENV(FOLDER)/$ENV(VARIABLE).merged"
-Arguments = $ENV(FOLDER) $ENV(VARIABLE) $ENV(CLUSTER) $ENV(USER)
-request_cpus = 16
+Output = logs/condor/merge/out/%TAG%_%VARIABLE%_$(Cluster)_$(Process).stdout
+Error = logs/condor/merge/err/%TAG%_%VARIABLE%_$(Cluster)_$(Process).stderr
+Log = logs/condor/merge/log/%TAG%_%VARIABLE%_$(Cluster)_$(Process).log
+TransferOutputRemaps = "%VARIABLE%.merged=$ENV(PWD)/%FOLDER%/%VARIABLE%.merged"
+Arguments = %FOLDER% %VARIABLE% %CLUSTER% $ENV(USER)
+request_cpus = 8
+Queue 1"""
+
+if options.cluster == 'lxplus':
+    if options.copy:
+        os.system('xrdcp -f ../../../../cmssw_11_3_4.tgz root://eosuser.cern.ch//eos/user/'+os.environ['USER'][0] +'/'+ os.environ['USER']+'/cmssw_11_3_4.tgz')
+        os.system('xrdcp -f ../../../../pylocal_3_8.tgz root://eosuser.cern.ch//eos/user/'+os.environ['USER'][0] + '/'+os.environ['USER']+'/pylocal_3_8.tgz')
+    jdl = """universe                = vanilla
+executable              = merge.sh
+should_transfer_files   = YES
+when_to_transfer_output = ON_EXIT
+transfer_input_files    = merge.sh, /afs/cern.ch/user/m/mcremone/private/x509up
+output                  = logs/condor/merge/out/$ENV(TAG)_$ENV(VARIABLE)_$(Cluster)_$(Process).stdout
+error                   = logs/condor/merge/err/$ENV(TAG)_$ENV(VARIABLE)_$(Cluster)_$(Process).stderr
+log                     = logs/condor/merge/log/$ENV(TAG)_$ENV(VARIABLE)_$(Cluster)_$(Process).log
+TransferOutputRemaps    = "$ENV(VARIABLE).merged=$ENV(PWD)/$ENV(FOLDER)/$ENV(VARIABLE).merged"
+Arguments               = $ENV(FOLDER) $ENV(VARIABLE) $ENV(CLUSTER) $ENV(USER)
+MY.SingularityImage     = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cat/cmssw-lxplus/cmssw-el7-lxplus:latest/"
+request_cpus            = 8
+JobBatchName            = $ENV(VARIABLE)
++JobFlavour             = "tomorrow"
 Queue 1"""
 
 jdl_file = open("merge.submit", "w") 
@@ -97,5 +117,14 @@ for variable in variables:
     os.environ['FOLDER'] = options.folder
     os.environ['VARIABLE'] = variable
     os.environ['CLUSTER'] = options.cluster
+    if options.cluster == 'lpc':
+        jdl_dataset = jdl
+        jdl_dataset = jdl_dataset.replace('%TAG%', tag)
+        jdl_dataset = jdl_dataset.replace('%FOLDER%', options.folder)
+        jdl_dataset = jdl_dataset.replace('%VARIABLE%', variable)
+        jdl_dataset = jdl_dataset.replace('%CLUSTER%', options.cluster)
+        jdl_file = open("merge.submit", "w") 
+        jdl_file.write(jdl_dataset) 
+        jdl_file.close() 
     os.system('condor_submit merge.submit')
 os.system('rm merge.submit')

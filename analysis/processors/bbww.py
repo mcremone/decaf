@@ -4,6 +4,7 @@ import numpy as np
 import awkward as ak
 import json
 import copy
+import os
 from collections import defaultdict
 from coffea import processor
 import hist
@@ -21,6 +22,8 @@ def update(events, collections):
         out = ak.with_field(out, value, name)
     return out
 
+path = "decaf/analysis/data/" if "srv" in os.getcwd() else "data/"   ### to make it run with coffea4bees
+
 class AnalysisProcessor(processor.ProcessorABC):
 
     lumis = { 
@@ -32,10 +35,10 @@ class AnalysisProcessor(processor.ProcessorABC):
     }
 
     lumiMasks = {
-        '2016postVFP': LumiMask("data/jsons/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt"),
-        '2016preVFP': LumiMask("data/jsons/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt"),
-        '2017': LumiMask("data/jsons/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt"),
-        '2018': LumiMask("data/jsons/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt"),
+        '2016postVFP': LumiMask(f"{path}/jsons/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt"),
+        '2016preVFP': LumiMask(f"{path}/jsons/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt"),
+        '2017': LumiMask(f"{path}/jsons/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt"),
+        '2018': LumiMask(f"{path}/jsons/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt"),
     }
     
     met_filters = {
@@ -140,9 +143,9 @@ class AnalysisProcessor(processor.ProcessorABC):
         }
 
 
-        self._corrections = load('data/corrections.coffea')
-        self._ids         = load('data/ids.coffea')
-        self._common      = load('data/common.coffea')
+        self._corrections = load(f'{path}/corrections.coffea')
+        self._ids         = load(f'{path}/ids.coffea')
+        self._common      = load(f'{path}/common.coffea')
 
     
 
@@ -271,6 +274,9 @@ class AnalysisProcessor(processor.ProcessorABC):
         jec_cache = cachetools.Cache(np.inf)
     
         nojer = "NOJER" if self._skipJER else ""
+        if events.metadata['year']: 
+            self._year = events.metadata['year'].replace('UL','20').replace("_", "")
+            self._lumi = events.metadata['lumi']
         thekey = f"{self._year}mc{nojer}"
 
         def add_jec_variables(jets, event_rho):
@@ -836,8 +842,12 @@ class AnalysisProcessor(processor.ProcessorABC):
 
 
         scale = 1
-        if self._xsec[dataset]!= -1: 
-            scale = self._lumi*self._xsec[dataset]
+        if isinstance(self._xsec, dict):
+            if self._xsec[dataset]!= -1: 
+                scale = self._lumi*self._xsec[dataset]
+        else:
+            if self._xsec!= -1: 
+                scale = events.metadata['lumi']*events.metadata['xs']
 
         for key in output:
             if key=='sumw': 

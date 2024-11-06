@@ -1,6 +1,7 @@
 import numpy as np
 from coffea.util import save
 import awkward as ak
+import os
 
 ######
 ## Electron
@@ -242,4 +243,5 @@ ids["isGoodAK4"] = isGoodAK4
 ids["isSoftAK4"] = isSoftAK4
 ids["isGoodAK15"] = isGoodAK15
 ids["isHEMJet"] = isHEMJet
-save(ids, "data/ids.coffea")
+path = "decaf/analysis/data/" if "srv" in os.getcwd() else "data/"   ### to make it run with coffea4bees
+save(ids, f"{path}/ids.coffea")

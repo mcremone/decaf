@@ -259,7 +259,52 @@ class AnalysisProcessor(processor.ProcessorABC):
                 hist.axis.Regular(64,-3.2,3.2, name='l1phi', label='Leading Lepton Phi'),
                 storage=hist.storage.Weight(),
             ),
-    }
+            'chi_hadW_W': hist.Hist(
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(50,0,5, name='chi_hadW_W', label= r'$\chi_2$ (total chi square)'),
+                storage=hist.storage.Weight(),                                 
+            ),
+            'chi_hadW_Ws': hist.Hist(
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(50,0,5, name='chi_hadW_Ws', label= r'$\chi_2$ (total chi square)'),
+                storage=hist.storage.Weight(),
+            ),
+            'chi_hadW_tt': hist.Hist(
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(50,0,5, name='chi_hadW_tt', label= r'$\chi_2$ (total chi square)'),
+                storage=hist.storage.Weight(),
+            ),
+            'chi_hadWs_W': hist.Hist(
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(50,0,5, name='chi_hadWs_W', label= r'$\chi_2$ (total chi square)'),
+                storage=hist.storage.Weight(),
+            ),
+            'chi_hadWs_Ws': hist.Hist(
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(50,0,5, name='chi_hadWs_Ws', label= r'$\chi_2$ (total chi square)'),
+                storage=hist.storage.Weight(),
+            ),
+            'chi_hadWs_tt': hist.Hist(
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(50,0,5, name='chi_hadWs_tt', label= r'$\chi_2$ (total chi square)'),
+                storage=hist.storage.Weight(),
+            ),
+            'chi_tt_W': hist.Hist(
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(50,0,5, name='chi_tt_W', label= r'$\chi_2$ (total chi square)'),
+                storage=hist.storage.Weight(),
+            ),
+            'chi_tt_Ws': hist.Hist(
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(50,0,5, name='chi_tt_Ws', label= r'$\chi_2$ (total chi square)'),
+                storage=hist.storage.Weight(),
+            ),
+            'chi_tt_tt': hist.Hist(
+                hist.axis.StrCategory([], name='region', growth=True),
+                hist.axis.Regular(50,0,5, name='chi_tt_tt', label= r'$\chi_2$ (total chi square)'),
+                storage=hist.storage.Weight(),
+            ),
+        }
 
     def process(self, events):
         isData = not hasattr(events, "genWeight")
@@ -287,7 +332,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             return jets
         
         jets = jet_factory[thekey].build(add_jec_variables(events.Jet, events.fixedGridRhoFastjetAll), jec_cache)
-        met = met_factory.build(events.MET, jets, {})
+        met = events.DeepMETResolutionTune
 
         shifts = [({"Jet": jets,"MET": met}, None)]
         if self._systematics:
@@ -363,7 +408,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         npv = events.PV.npvsGood 
         run = events.run
         #calomet = events.CaloMET
-        met = events.MET
+        met = events.DeepMETResolutionTune
         met['pt'] , met['phi'] = get_met_xy_correction(self._year, npv, run, met.pt, met.phi, isData)
 
         ###
@@ -512,33 +557,41 @@ class AnalysisProcessor(processor.ProcessorABC):
         ###
 
         j_candidates = j_soft[ak.argsort(j_soft.particleNetAK4_QvsG, axis=1, ascending=False)]#particleNetAK4_QvsG btagPNetQvG
-        j_candidates = j_candidates[:, :4] #consider only the first 4
+        j_candidates = j_candidates[:, :5] #consider only the first 5
         j_candidates = j_candidates[ak.argsort(j_candidates.particleNetAK4_B, axis=1, ascending=False)]#particleNetAK4_B btagPNetB
+        
+        jb_candidates = ak.pad_none(j_candidates[:,:2], 2,axis=1) # two b-jets
+        j_candidates = j_candidates[:,2:] #non b-jets
+        j_candidates = j_candidates[ak.argsort(j_candidates.pt, axis=1, ascending=False)]
 
+        
+        jj_i = ak.argcombinations(j_candidates,2,fields=["j1","j2"])
+        jj_i = jj_i[(j_candidates[jj_i.j1]+ j_candidates[jj_i.j2]).eta<2.0]
+        jj_i = jj_i[(j_candidates[jj_i.j1]+ j_candidates[jj_i.j2]).mass<120.0] #dijet cuts
+        
         try:
-            bb = j_candidates[:, 0] + j_candidates[:, 1]
+            bb = jb_candidates[:, 0] + jb_candidates[:, 1]
             mbb = bb.mass
         except:
             mbb = np.zeros(len(events), dtype='float')
 
         try:
-            qq = j_candidates[:, -1] + j_candidates[:, -2]
+            qq = ak.pad_none(j_candidates[jj_i.j1] + j_candidates[jj_i.j2],3, axis=1)
             mqq = qq.mass
         except:
             mqq = np.zeros(len(events), dtype='float')
         
-        j_candidates = j_candidates[:, -2:]
-        j_candidates = j_candidates[ak.argsort(j_candidates.pt, axis=1, ascending=False)]
         try:
             q2pt = j_candidates[:, -1].pt
         except:
             q2pt = np.zeros(len(events), dtype='float')
             
-        def neutrino_pz(l,v):
+        #ttbar and hadronic W neutrino pz reconstruction
+        def nu_pz(l,v):
             m_w = 80.379
             m_l = l.mass            
-            A = (l.px*v.px+l.py*v.py) + (m_w**2 - m_l**2)/2
-            B = l.energy**2*(v.px**2+v.py**2)
+            A = (l.px*v.pt * np.cos(v.phi)+l.py*v.pt * np.sin(v.phi)) + (m_w**2 - m_l**2)/2
+            B = l.energy**2*((v.pt * np.cos(v.phi))**2+(v.pt * np.sin(v.phi))**2)
             C = l.energy**2 - l.pz**2
             discriminant = (2 * A * l.pz)**2 - 4 * (B - A**2) * C
             # avoiding imaginary solutions
@@ -546,49 +599,301 @@ class AnalysisProcessor(processor.ProcessorABC):
             pz_1 = (2*A*l.pz + sqrt_discriminant)/(2*C)
             pz_2 = (2*A*l.pz - sqrt_discriminant)/(2*C)
             return ak.where(abs(pz_1) < abs(pz_2), pz_1, pz_2)
-
+            
+        # hadronic W* signal reconstruction
         v_e = ak.zip(
             {
-                "x": met.px,
-                "y": met.py,
-                "z": neutrino_pz(leading_e, met),
-                "t": np.sqrt(met.pt**2+neutrino_pz(leading_e, met)**2) ,
+                "x": met.pt * np.cos(met.phi),
+		"y": met.pt * np.sin(met.phi),
+	        "z": nu_pz(leading_e, met),
+                "t": np.sqrt(met.pt**2 + nu_pz(leading_e, met)**2)
             },
             with_name="LorentzVector",
             behavior=vector.behavior,
         )
-        try:
-            evqq = leading_e + v_e + qq
-            mevqq = evqq.mass
-        except:
-            mevqq = np.zeros(len(events), dtype='float')
 
-        v_m = ak.zip(
+        v_mu = ak.zip(
             {
-                "x": met.px,
-                "y": met.py,
-                "z": neutrino_pz(leading_mu, met),
-                "t": np.sqrt(met.pt**2+neutrino_pz(leading_mu, met)**2) ,
+                "x": met.pt * np.cos(met.phi),
+                "y": met.pt * np.sin(met.phi),
+                "z": nu_pz(leading_mu, met),
+                "t": np.sqrt(met.pt**2+nu_pz(leading_mu, met)**2) ,
             },
             with_name="LorentzVector",
             behavior=vector.behavior,
         )
-        try:
-            mvqq = leading_mu + v_mu + qq
-            mmvqq = mvqq.mass
-        except:
-            mmvqq = np.zeros(len(events), dtype='float')
 
-        mlvqq = {
+        v_mu = ak.mask(v_mu, ~np.isnan(v_mu.pz))
+        v_e = ak.mask(v_e, ~np.isnan(v_e.pz)) #avoid calculations for imaginary solutions
+
+        # H -> lvqq with electrons and muons
+        mevqq = (leading_e + v_e + qq).mass
+        mmuvqq = (leading_mu + v_e + qq).mass
+
+        l_mu = ~ak.is_none(leading_mu.pt)
+        l_e = ~ak.is_none(leading_e.pt)
+        muge = leading_mu.pt > leading_e.pt
+
+        mlvqq_W = {
             'esr'  : mevqq,
-            'msr'  : mmvqq
+            'msr'  : mmuvqq
         }
+         
+        mlvqq_W = ak.where(l_mu & l_e,
+                         ak.where(muge, mlvqq_W['msr'], mlvqq_W['esr']),
+                         ak.where(l_mu, mlvqq_W['msr'], mlvqq_W['esr'])
+                         ) #select leading lepton combination
+
+        def chi_square(data,mean,std):
+            x_2 = ak.sum(data**2)
+            n = ak.count(data[~ak.is_none(data)])
+            chi2 = ((data - mean)/std)**2
+            return chi2, mean, std
+
+        chi1_W, mean1_W, std1_W = chi_square(mbb,116.02, 45.04) # H -> bb            
+        chi2_W, mean2_W, std2_W = chi_square(mlvqq_W, 173.59, 48.67) # H -> lvqq
+        chi3_W, mean3_W, std3_W = chi_square(qq.mass,41.77, 14.92) #hadronic W*    
+         
+        chi_sq_hh_W = np.sqrt(chi1_W + chi2_W + chi3_W)
         
+        hadW_mask = ak.pad_none((j_candidates[jj_i.j1].matched_gen + j_candidates[jj_i.j2].matched_gen).mass, 3, axis=1)>=55.0 #hadronic W signal selection
+        hadWs_mask = ak.pad_none((j_candidates[jj_i.j1].matched_gen + j_candidates[jj_i.j2].matched_gen).mass, 3, axis=1)<55.0 #hadronic W*signal selection
+
+        #separate three regions
+        chi_sq_hh_W = {
+                 'hadW'  : ak.mask(chi_sq_hh_W, hadW_mask),
+                 'hadWs' : ak.mask(chi_sq_hh_W, hadWs_mask),
+                 'ttbar' : chi_sq_hh_W
+                 }
+        
+        chi_sq_hh_W = {key: value[ak.argmin(value, axis=1, keepdims = True)] for key, value in chi_sq_hh_W.items()} #selecting non-bjets pairing with least chi square
+        
+        mlvqq_W = {
+                 'hadW'  : ak.mask(mlvqq_W, hadW_mask),
+                 'hadWs' : ak.mask(mlvqq_W, hadWs_mask),
+                 'ttbar' : mlvqq_W
+                 }
+
+        qq_W = {
+                 'hadW'  : ak.mask(qq, hadW_mask),
+                 'hadWs' : ak.mask(qq, hadWs_mask),
+                 'ttbar' : qq
+                 }
+
+        chi1_W = {
+                 'hadW'  : ak.mask(chi1_W, hadW_mask),
+                 'hadWs' : ak.mask(chi1_W, hadWs_mask),
+                 'ttbar' : chi1_W
+                 }
+
+        chi2_W = {
+                 'hadW'  : ak.mask(chi2_W, hadW_mask),
+                 'hadWs' : ak.mask(chi2_W, hadWs_mask),
+                 'ttbar' : chi2_W
+                 }
+
+        chi3_W = {
+                 'hadW'  : ak.mask(chi3_W, hadW_mask),
+                 'hadWs' : ak.mask(chi3_W, hadWs_mask),
+                 'ttbar' : chi3_W
+                 }
+        ## end hadronic W* signal reconstruction
+
+        ## hadronic W signal reconstruction
+        def nu_pz_Ws(l,nu,W):
+            m_H = 125.35
+        
+            A = m_H**2 - W.mass**2 - l.mass**2 - 2*l.energy*W.energy + 2*(l.px*W.px + l.py*W.py + l.pz*W.pz) + 2*(l.px*nu.pt * np.cos(nu.phi) + l.py*nu.pt * np.sin(nu.phi) + W.px*nu.pt * np.cos(nu.phi) + W.py*nu.pt * np.sin(nu.phi))
+            B = A**2/4 - (l.energy + W.energy)**2*((nu.pt * np.cos(nu.phi))**2 + (nu.pt * np.sin(nu.phi))**2)
+            C = (l.pz + W.pz)**2 - (l.energy + W.energy)**2
+        
+            discriminant = A**2*(l.pz+W.pz)**2 - 4*B*C
+            sqrt_discriminant = ak.where(discriminant >= 0, np.sqrt(discriminant),np.nan) # avoiding imaginary solutions
+        
+            pz_1 = (-A*(l.pz + W.pz) + sqrt_discriminant)/(2*C)
+            pz_2 = (-A*(l.pz + W.pz) - sqrt_discriminant)/(2*C)
+            pz =  ak.where(abs(pz_1) < abs(pz_2), pz_1, pz_2)                  
+        
+            return pz
+
+        v_e_Ws = ak.zip(
+            {
+	        "x": met.pt * np.cos(met.phi),
+                "y": met.pt * np.sin(met.phi),
+                "z": nu_pz_Ws(leading_e, met, qq),
+                "t": np.sqrt(met.pt**2 + nu_pz_Ws(leading_e, met, qq)**2)
+            },
+            with_name="LorentzVector",
+            behavior=vector.behavior,
+	        )
+
+        v_mu_Ws = ak.zip(
+            {
+                "x": met.pt * np.cos(met.phi),
+		"y": met.pt * np.sin(met.phi),
+                "z": nu_pz_Ws(leading_mu, met, qq),
+                "t": np.sqrt(met.pt**2 + nu_pz_Ws(leading_mu, met, qq)**2)
+            },
+            with_name="LorentzVector",
+            behavior=vector.behavior,
+	        )
+        
+        v_mu_Ws = ak.mask(v_mu_Ws, ~np.isnan(v_mu_Ws.pz))
+        v_e_Ws = ak.mask(v_e_Ws, ~np.isnan(v_e_Ws.pz)) #avoid calculations for imaginary solutions that are not always skipped
+        
+        # H -> lvqq with electrons and muons
+        mevqq_Ws = (leading_e + v_e_Ws + qq).mass
+        mmuvqq_Ws = (leading_mu + v_e_Ws + qq).mass
+
+        #transverse mass
         mT = {
-            'esr'  : np.sqrt(2*leading_e.pt*met.pt*(1-np.cos(met.delta_phi(leading_e.T)))),
-            'msr'  : np.sqrt(2*leading_mu.pt*met.pt*(1-np.cos(met.delta_phi(leading_mu.T))))
+            'esr'  : np.sqrt(2*leading_e.pt*met.pt*(1-np.cos(met.phi - leading_e.phi))),
+            'msr'  : np.sqrt(2*leading_mu.pt*met.pt*(1-np.cos(met.phi - leading_mu.phi))) #using .delta_phi doesn't seem to work for DeepMET
         }
 
+        mlvqq_Ws = {
+            'esr'  : mevqq_Ws,
+            'msr'  : mmuvqq_Ws
+        }
+
+        mlvqq_Ws = ak.where(l_mu & l_e,
+                         ak.where(muge, mlvqq_Ws['msr'], mlvqq_Ws['esr']),
+                         ak.where(l_mu, mlvqq_Ws['msr'], mlvqq_Ws['esr'])
+                         ) #select leading lepton combination  
+
+        mT = ak.where(l_mu & l_e,
+                         ak.where(muge, mT['msr'], mT['esr']),
+                         ak.where(l_mu, mT['msr'], mT['esr'])
+                         )
+
+        qq_cut = ak.mask(qq, abs(mlvqq_Ws - 125.35) < 5) #dropping the 'tail' of Higgs mass plot
+
+        chi1_Ws, mean1_Ws, std1_Ws = chi_square(mbb,115.33, 46.29) # H -> bb
+        chi2_Ws, mean2_Ws, std2_Ws = chi_square(mT, 58.87, 37.35) #transverse mass             
+        chi3_Ws, mean3_Ws, std3_Ws = chi_square(qq_cut.mass,66.89, 10.98) #hadronic W
+
+        chi_sq_hh_Ws = np.sqrt(chi1_Ws + chi2_Ws + chi3_Ws)
+
+        chi_sq_hh_Ws = {
+                 'hadW'  : ak.mask(chi_sq_hh_Ws, hadW_mask),
+                 'hadWs' : ak.mask(chi_sq_hh_Ws, hadWs_mask),
+                 'ttbar' : chi_sq_hh_Ws
+                 }
+
+        chi_sq_hh_Ws = {key: value[ak.argmin(value, axis=1, keepdims=True)] for key, value in chi_sq_hh_Ws.items()} #selecting non-bjets pairing with least chi square
+
+        mT = {
+                 'hadW'  : ak.mask(mT, hadW_mask),
+                 'hadWs' : ak.mask(mT, hadWs_mask),
+                 'ttbar' : mT
+                 }
+
+        qq_cut = {
+                 'hadW'  : ak.mask(qq_cut, hadW_mask),
+                 'hadWs' : ak.mask(qq_cut, hadWs_mask),
+                 'ttbar' : qq_cut
+                 }
+
+        chi1_Ws = {
+                 'hadW'  : ak.mask(chi1_Ws, hadW_mask),
+                 'hadWs' : ak.mask(chi1_Ws, hadWs_mask),
+                 'ttbar' : chi1_Ws
+                 }
+
+        chi2_Ws = {
+                 'hadW'  : ak.mask(chi2_Ws, hadW_mask),
+                 'hadWs' : ak.mask(chi2_Ws, hadWs_mask),
+                 'ttbar' : chi2_Ws
+                 }
+
+        chi3_Ws = {
+                 'hadW'  : ak.mask(chi3_Ws, hadW_mask),
+                 'hadWs' : ak.mask(chi3_Ws, hadWs_mask),
+                 'ttbar' : chi3_Ws
+                 }
+
+        ## ttbar reconstruction
+        
+        #leptonic top with electrons
+        mevb1 = (leading_e + v_e + ak.pad_none(jb_candidates,2,axis=1)[:,0]).mass
+        mevb2 = (leading_e + v_e + ak.pad_none(jb_candidates,2,axis=1)[:,1]).mass
+
+        #leptonic top with muons
+        mmvb1 = (leading_mu + v_mu + ak.pad_none(jb_candidates,2,axis=1)[:,0]).mass
+        mmvb2 = (leading_mu + v_mu + ak.pad_none(jb_candidates,2,axis=1)[:,1]).mass
+
+        mlvb1 = ak.where(l_mu & l_e,
+                         ak.where(muge, mmvb1, mevb1),
+                         ak.where(l_mu, mmvb1, mevb1)
+                         ) #leptonic candidate 1
+
+        mlvb2 = ak.where(l_mu & l_e,
+                         ak.where(muge, mmvb2, mevb2),
+                         ak.where(l_mu, mmvb2, mevb2)
+                         ) #leptonic candidate 2  
+
+        mbqq1 = ak.pad_none((ak.pad_none(jb_candidates,2,axis=1)[:,0] + qq).mass,3,axis=1) #hadronic candidate 1
+        mbqq2 = ak.pad_none((ak.pad_none(jb_candidates,2,axis=1)[:,1] + qq).mass,3,axis=1) #hadronic candidate 2
+
+        def distance(x1,y1,x2,y2):
+            return np.sqrt((x2-x1)**2+(y2-y1)**2)
+        
+        #ttbar candidates
+        tt1 = ak.cartesian({"t1":mlvb1,"t2":mbqq2},axis=1)
+        tt2 = ak.cartesian({"t1":mlvb2,"t2":mbqq1},axis=1)
+        b_sel = abs(distance(tt1.t1,tt1.t2,172.5,172.5)) <  abs(distance(tt2.t1,tt2.t2,172.5,172.5)) #pick pair closest to ttbar mass
+
+        #conditions to work around None values
+        c1 = ~ak.is_none(distance(tt1.t1, tt1.t2,172.5,172.5))
+        c2 = ~ak.is_none(distance(tt2.t1, tt2.t2,172.5,172.5))
+
+        #final ttbar candidates
+        tt = ak.pad_none(ak.where( c1 & c2, ak.where(b_sel, tt1 , tt2), ak.where(c1, tt1, tt2)),3,axis=1)
+
+        chi1_tt, mean1_tt, std1_tt = chi_square(tt.t1,47.59,194.93 ) #leptonic top
+        chi2_tt, mean2_tt, std2_tt = chi_square(tt.t2, 44.95, 171.55 ) #hadronic top
+        chi3_tt, mean3_tt, std3_tt = chi_square(qq.mass,23.56,73.9) #hadronic W
+        
+        chi_sq_tt = np.sqrt(chi1_tt + chi2_tt + chi3_tt)
+
+        #separate three regions
+        chi_sq_tt = {
+                 'hadW'  : ak.mask(chi_sq_tt, hadW_mask),
+                 'hadWs' : ak.mask(chi_sq_tt, hadWs_mask),
+                 'ttbar' : chi_sq_tt
+                 }
+
+        chi_sq_tt = {key: value[ak.argmin(value, axis=1, keepdims=True)] for key, value in chi_sq_tt.items()} #selecting non-bjets pairing with least chi square 
+        
+        tt = {
+                 'hadW'  : ak.mask(tt, hadW_mask),
+                 'hadWs' : ak.mask(tt, hadWs_mask),
+                 'ttbar' : tt
+                 }
+
+        qq_tt = {
+                 'hadW'  : ak.mask(qq, hadW_mask),
+                 'hadWs' : ak.mask(qq, hadWs_mask),
+                 'ttbar' : qq
+                 }
+
+        chi1_tt = {
+                 'hadW'  : ak.mask(chi1_tt, hadW_mask),
+                 'hadWs' : ak.mask(chi1_tt, hadWs_mask),
+                 'ttbar' : chi1_tt
+                 }
+
+        chi2_tt = {
+                 'hadW'  : ak.mask(chi2_tt, hadW_mask),
+                 'hadWs' : ak.mask(chi2_tt, hadWs_mask),
+                 'ttbar' : chi2_tt
+                 }
+
+        chi3_tt = {
+                 'hadW'  : ak.mask(chi3_tt, hadW_mask),
+                 'hadWs' : ak.mask(chi3_tt, hadWs_mask),
+                 'ttbar' : chi3_tt
+                 }
         ###
         #Calculating weights
         ###
@@ -791,18 +1096,27 @@ class AnalysisProcessor(processor.ProcessorABC):
                 weight = weights.weight()[cut]
             if systematic is None:
                 variables = {
-                    'met':                    met.pt,
-                    'metphi':                 met.phi,
-                    'j1pt':                   leading_j.pt,
-                    'j1eta':                  leading_j.eta,
-                    'j1phi':                  leading_j.phi,
-                    'njets':                  j_nsoft,
-                    'ndflvM':                 j_ndflvL,
-                    'mT':                     mT[region],
-                    'mlvqq':                  mlvqq[region],
-                    'mbb':                    mbb,
-                    'mqq':                    mqq,
-                    'q2pt':                   q2pt
+                    #'met':                    met.pt,
+                    #'metphi':                 met.phi,
+                    #'j1pt':                   leading_j.pt,
+                    #'j1eta':                  leading_j.eta,
+                    #'j1phi':                  leading_j.phi,
+                    #'njets':                  j_nsoft,
+                    #'ndflvM':                 j_ndflvL,
+                    #'mT':                     mT[region],
+                    #'mlvqq':                  mlvqq[region],
+                    #'mbb':                    mbb,
+                    #'mqq':                    mqq,
+                    #'q2pt':                   q2pt
+                    'chi_hadW_W':                    ak.firsts(chi_sq_hh_W['hadW']),
+                    'chi_hadW_Ws':                   ak.firsts(chi_sq_hh_W['hadWs']),
+                    'chi_hadW_tt':                   ak.firsts(chi_sq_hh_W['ttbar']),
+                    'chi_hadWs_W':                   ak.firsts(chi_sq_hh_Ws['hadW']),
+                    'chi_hadWs_Ws':                  ak.firsts(chi_sq_hh_Ws['hadWs']),
+                    'chi_hadWs_tt':                  ak.firsts(chi_sq_hh_Ws['ttbar']),
+                    'chi_tt_W':                      ak.firsts(chi_sq_tt['hadW']),
+                    'chi_tt_Ws':                     ak.firsts(chi_sq_tt['hadWs']),
+                    'chi_tt_tt':                     ak.firsts(chi_sq_tt['ttbar']),
                 }
                 if 'e' in region:
                     variables['l1pt']      = leading_e.pt

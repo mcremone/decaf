@@ -14,6 +14,11 @@ from coffea.util import load, save
 from optparse import OptionParser
 from coffea.nanoevents.methods import vector
 import gzip
+import sys 
+import logging 
+
+
+
 
 def update(events, collections):
     """Return a shallow copy of events array with some collections swapped out"""
@@ -33,6 +38,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         '2017': 41.48,
         '2018': 59.83
     }
+    #log_message(lumis)
 
     lumiMasks = {
         '2016postVFP': LumiMask(f"{path}/jsons/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt"),
@@ -146,6 +152,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         self._corrections = load(f'{path}/corrections.coffea')
         self._ids         = load(f'{path}/ids.coffea')
         self._common      = load(f'{path}/common.coffea')
+
 
     
 
@@ -263,6 +270,7 @@ class AnalysisProcessor(processor.ProcessorABC):
 
     def process(self, events):
         isData = not hasattr(events, "genWeight")
+        #log_message('isData')
         if isData:
             # Nominal JEC are already applied in data
             return self.process_shift(events, None)
@@ -305,7 +313,6 @@ class AnalysisProcessor(processor.ProcessorABC):
         return processor.accumulate(self.process_shift(update(events, collections), name) for collections, name in shifts)
 
     def process_shift(self, events, shift_name):
-
         dataset = events.metadata['dataset']
 
         selected_regions = []
@@ -471,6 +478,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         pho_ntot=ak.num(pho, axis=1)
         pho_nloose=ak.num(pho_loose, axis=1)
 
+
         
         j = events.Jet
         j['isclean'] = (
@@ -510,29 +518,38 @@ class AnalysisProcessor(processor.ProcessorABC):
         ###
         # Calculate derivatives
         ###
+        mbb = np.zeros(len(events), dtype="float")
+        mqq = np.zeros(len(events), dtype="float")
+        q2pt = np.zeros(len(events), dtype="float")
 
-        j_candidates = j_soft[ak.argsort(j_soft.particleNetAK4_QvsG, axis=1, ascending=False)]#particleNetAK4_QvsG btagPNetQvG
+
+        j_candidates = j_soft[ak.argsort(j_soft.particleNetAK4_QvsG, axis=1, ascending=False)] #particleNetAK4_QvsG btagPNetQvG
+
         j_candidates = j_candidates[:, :4] #consider only the first 4
+
         j_candidates = j_candidates[ak.argsort(j_candidates.particleNetAK4_B, axis=1, ascending=False)]#particleNetAK4_B btagPNetB
 
-        try:
-            bb = j_candidates[:, 0] + j_candidates[:, 1]
-            mbb = bb.mass
-        except:
-            mbb = np.zeros(len(events), dtype='float')
 
-        try:
-            qq = j_candidates[:, -1] + j_candidates[:, -2]
-            mqq = qq.mass
-        except:
-            mqq = np.zeros(len(events), dtype='float')
-        
+        valid_bb = ak.num(j_candidates) >= 2
+
+        if ak.any(valid_bb):  # Proceed only if there are valid events
+            bb = j_candidates[valid_bb][:, 0] + j_candidates[valid_bb][:, 1]
+            mbb[valid_bb] = bb.mass
+            
+
+        valid_qq = ak.num(j_candidates) >= 2
+        if ak.any(valid_qq):
+            qq = j_candidates[valid_qq][:, -1] + j_candidates[valid_qq][:, -2]
+            mqq[valid_qq] = qq.mass
+            
         j_candidates = j_candidates[:, -2:]
         j_candidates = j_candidates[ak.argsort(j_candidates.pt, axis=1, ascending=False)]
-        try:
-            q2pt = j_candidates[:, -1].pt
-        except:
-            q2pt = np.zeros(len(events), dtype='float')
+
+        valid_q2pt = ak.num(j_candidates) >= 1
+
+        if ak.any(valid_q2pt):
+            q2pt[valid_q2pt] = j_candidates[valid_q2pt][:, -1].pt
+
             
         def neutrino_pz(l,v):
             m_w = 80.379

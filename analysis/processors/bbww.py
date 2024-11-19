@@ -530,17 +530,17 @@ class AnalysisProcessor(processor.ProcessorABC):
         j_candidates = j_candidates[ak.argsort(j_candidates.particleNetAK4_B, axis=1, ascending=False)]#particleNetAK4_B btagPNetB
 
 
-        valid_bb = ak.num(j_candidates) >= 2
+        valid_jets = ak.num(j_candidates) >= 2
 
-        if ak.any(valid_bb):  # Proceed only if there are valid events
-            bb = j_candidates[valid_bb][:, 0] + j_candidates[valid_bb][:, 1]
-            mbb[valid_bb] = bb.mass
+        if ak.any(valid_jets):  # Proceed only if there are valid events
+            bb = j_candidates[valid_jets][:, 0] + j_candidates[valid_jets][:, 1]
+            mbb[valid_jets] = bb.mass
             
 
-        valid_qq = ak.num(j_candidates) >= 2
-        if ak.any(valid_qq):
-            qq = j_candidates[valid_qq][:, -1] + j_candidates[valid_qq][:, -2]
-            mqq[valid_qq] = qq.mass
+        valid_jets = ak.num(j_candidates) >= 2
+        if ak.any(valid_jets):
+            qq = j_candidates[valid_jets][:, -1] + j_candidates[valid_jets][:, -2]
+            mqq[valid_jets] = qq.mass
             
         j_candidates = j_candidates[:, -2:]
         j_candidates = j_candidates[ak.argsort(j_candidates.pt, axis=1, ascending=False)]

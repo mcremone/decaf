@@ -535,10 +535,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         if ak.any(valid_jets):  # Proceed only if there are valid events
             bb = j_candidates[valid_jets][:, 0] + j_candidates[valid_jets][:, 1]
             mbb[valid_jets] = bb.mass
-            
 
-        valid_jets = ak.num(j_candidates) >= 2
-        if ak.any(valid_jets):
             qq = j_candidates[valid_jets][:, -1] + j_candidates[valid_jets][:, -2]
             mqq[valid_jets] = qq.mass
             

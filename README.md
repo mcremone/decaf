@@ -7,3 +7,5 @@ Just a placeholder for the moment.
 Run3 Twiki: https://twiki.cern.ch/twiki/bin/view/CMS/PdmVRun3Analysis 
 
 Run3 mattermost chat: https://mattermost.web.cern.ch/cms-ppd/channels/run-3-chat 
+
+CMS Week 2024 talk: https://indico.cern.ch/event/1481332/timetable/#82-everything-you-always-wante

@@ -14,6 +14,11 @@ from coffea.util import load, save
 from optparse import OptionParser
 from coffea.nanoevents.methods import vector
 import gzip
+import sys 
+import logging 
+
+
+
 
 def update(events, collections):
     """Return a shallow copy of events array with some collections swapped out"""
@@ -33,6 +38,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         '2017': 41.48,
         '2018': 59.83
     }
+    #log_message(lumis)
 
     lumiMasks = {
         '2016postVFP': LumiMask(f"{path}/jsons/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt"),
@@ -147,6 +153,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         self._ids         = load(f'{path}/ids.coffea')
         self._common      = load(f'{path}/common.coffea')
 
+
     
 
         ptbins=[15.0,
@@ -186,83 +193,156 @@ class AnalysisProcessor(processor.ProcessorABC):
             'sumw': 0.,
             'met': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
+	        hist.axis.Variable([-10, 0, 55,1000], name="sr_hadw", label="regions_hadronicW_selection"), # the first bin stores None values (jets that have no matching gen jets)
+                hist.axis.Variable([-10, 0, 55,1000], name="sr_hadws", label="regions_hadronicWs_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="br_tt", label="regions_ttbar_selection"),
                 hist.axis.Regular(30,0,600, name='met', label='MET'),
                 storage=hist.storage.Weight(),
             ),
             'metphi': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
+		hist.axis.Variable([-10, 0, 55,1000], name="sr_hadw", label="regions_hadronicW_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="sr_hadws", label="regions_hadronicWs_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="br_tt", label="regions_ttbar_selection"),
                 hist.axis.Regular(35,-3.5,3.5, name='metphi', label='MET phi'),
                 storage=hist.storage.Weight(),
             ),
             'j1pt': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
+		hist.axis.Variable([-10, 0, 55,1000], name="sr_hadw", label="regions_hadronicW_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="sr_hadws", label="regions_hadronicWs_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="br_tt", label="regions_ttbar_selection"),
                 hist.axis.Variable(ptbins, name='j1pt', label='AK4 Leading Jet Pt'),
                 storage=hist.storage.Weight(),
             ),
             'j1eta': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
+		hist.axis.Variable([-10, 0, 55,1000], name="sr_hadw", label="regions_hadronicW_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="sr_hadws", label="regions_hadronicWs_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="br_tt", label="regions_ttbar_selection"),
                 hist.axis.Regular(35,-3.5,3.5, name='j1eta', label='AK4 Leading Jet Eta'),
                 storage=hist.storage.Weight(),
             ),
             'j1phi': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
+		hist.axis.Variable([-10, 0, 55,1000], name="sr_hadw", label="regions_hadronicW_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="sr_hadws", label="regions_hadronicWs_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="br_tt", label="regions_ttbar_selection"),
                 hist.axis.Regular(35,-3.5,3.5, name='j1phi', label='AK4 Leading Jet Phi'),
                 storage=hist.storage.Weight(),
             ),
             'njets': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
+		hist.axis.Variable([-10, 0, 55,1000], name="sr_hadw", label="regions_hadronicW_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="sr_hadws", label="regions_hadronicWs_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="br_tt", label="regions_ttbar_selection"),
                 hist.axis.IntCategory([0, 1, 2, 3, 4, 5, 6], name='njets', label='Number of AK4 Jets'),
                 storage=hist.storage.Weight(),
             ),
             'ndflvM': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
+		hist.axis.Variable([-10, 0, 55,1000], name="sr_hadw", label="regions_hadronicW_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="sr_hadws", label="regions_hadronicWs_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="br_tt", label="regions_ttbar_selection"),
                 hist.axis.IntCategory([0, 1, 2, 3, 4, 5, 6], name='ndflvM', label='AK4 Number of deepFlavor Medium Jets'),
                 storage=hist.storage.Weight(),
             ),
             'mbb': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
+		hist.axis.Variable([-10, 0, 55,1000], name="sr_hadw", label="regions_hadronicW_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="sr_hadws", label="regions_hadronicWs_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="br_tt", label="regions_ttbar_selection"),
                 hist.axis.Regular(20,0,300, name='mbb', label='Di-b Jet Mass'),
                 storage=hist.storage.Weight(),
             ),
             'mqq': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
+		hist.axis.Variable([-10, 0, 55,1000], name="sr_hadw", label="regions_hadronicW_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="sr_hadws", label="regions_hadronicWs_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="br_tt", label="regions_ttbar_selection"),
                 hist.axis.Regular(20,0,300, name='mqq', label='Di-q Jet Mass'),
                 storage=hist.storage.Weight(),
             ),
             'mlvqq': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
+		hist.axis.Variable([-10, 0, 55,1000], name="sr_hadw", label="regions_hadronicW_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="sr_hadws", label="regions_hadronicWs_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="br_tt", label="regions_ttbar_selection"),
                 hist.axis.Regular(20,0,300, name='mlvqq', label='WW Mass'),
                 storage=hist.storage.Weight(),
             ),
             'q2pt': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
+		hist.axis.Variable([-10, 0, 55,1000], name="sr_hadw", label="regions_hadronicW_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="sr_hadws", label="regions_hadronicWs_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="br_tt", label="regions_ttbar_selection"),
                 hist.axis.Variable(ptbins, name='q2pt', label='Sub-Leading Quark Jet Pt'),
                 storage=hist.storage.Weight(),
             ),
             'mT': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
+		hist.axis.Variable([-10, 0, 55,1000], name="sr_hadw", label="regions_hadronicW_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="sr_hadws", label="regions_hadronicWs_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="br_tt", label="regions_ttbar_selection"),
                 hist.axis.Regular(20,0,600, name='mT', label='Transverse Mass'),
                 storage=hist.storage.Weight(),
             ),
             'l1pt': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
+		hist.axis.Variable([-10, 0, 55,1000], name="sr_hadw", label="regions_hadronicW_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="sr_hadws", label="regions_hadronicWs_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="br_tt", label="regions_ttbar_selection"),
                 hist.axis.Variable(ptbins, name='l1pt', label='Leading Lepton Pt'),
                 storage=hist.storage.Weight(),
             ),
             'l1eta': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
+		hist.axis.Variable([-10, 0, 55,1000], name="sr_hadw", label="regions_hadronicW_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="sr_hadws", label="regions_hadronicWs_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="br_tt", label="regions_ttbar_selection"),
                 hist.axis.Regular(48,-2.4,2.4, name='l1eta', label='Leading Lepton Eta'),
                 storage=hist.storage.Weight(),
             ),
             'l1phi': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
+		hist.axis.Variable([-10, 0, 55,1000], name="sr_hadw", label="regions_hadronicW_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="sr_hadws", label="regions_hadronicWs_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="br_tt", label="regions_ttbar_selection"),
                 hist.axis.Regular(64,-3.2,3.2, name='l1phi', label='Leading Lepton Phi'),
                 storage=hist.storage.Weight(),
             ),
-    }
+             'chi_sq_hadW_sel' : hist.Hist(
+                hist.axis.StrCategory([], name="region", growth=True),
+                hist.axis.StrCategory([], name="dataset", growth=True),
+		hist.axis.Variable([-10, 0, 55,1000], name="sr_hadw", label="regions_hadronicW_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="sr_hadws", label="regions_hadronicWs_selection"),
+                hist.axis.Variable([-10, 0, 55,1000], name="br_tt", label="regions_ttbar_selection"),
+                hist.axis.Regular(50, 0, 5, name="chi_hadW", label=r'$\chi^2$'),
+                storage=hist.storage.Weight()
+            ),
+            'chi_sq_hadWs_sel' : hist.Hist(
+                hist.axis.StrCategory([], name="region", growth=True),
+                hist.axis.StrCategory([], name="dataset", growth=True),
+		hist.axis.Variable([-10, 0,55,1000], name="sr_hadw", label="regions_hadronicW_selection"),
+                hist.axis.Variable([-10, 0,55,1000], name="sr_hadws", label="regions_hadronicWs_selection"),
+                hist.axis.Variable([-10, 0,55,1000], name="br_tt", label="regions_ttbar_selection"),
+                hist.axis.Regular(50, 0, 5, name="chi_hadWs", label=r'$\chi^2$'),
+                storage=hist.storage.Weight()
+            ),
+	    'chi_sq_tt_sel' : hist.Hist(
+		hist.axis.StrCategory([], name="region", growth=True),
+                hist.axis.StrCategory([], name="dataset", growth=True),
+		hist.axis.Variable([-10, 0, 55, 1000], name="sr_hadw", label="regions_hadronicW_selection"),
+                hist.axis.Variable([-10, 0, 55, 1000], name="sr_hadws", label="regions_hadronicWs_selection"),
+                hist.axis.Variable([-10, 0, 55, 1000], name="br_tt", label="regions_ttbar_selection"),
+                hist.axis.Regular(50, 0, 5, name="chi_tt", label=r'$\chi^2$'),
+                storage=hist.storage.Weight()
+	    )
+        }
 
     def process(self, events):
         isData = not hasattr(events, "genWeight")
+        #log_message('isData')
         if isData:
             # Nominal JEC are already applied in data
             return self.process_shift(events, None)
@@ -305,7 +385,6 @@ class AnalysisProcessor(processor.ProcessorABC):
         return processor.accumulate(self.process_shift(update(events, collections), name) for collections, name in shifts)
 
     def process_shift(self, events, shift_name):
-
         dataset = events.metadata['dataset']
 
         selected_regions = []
@@ -471,6 +550,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         pho_ntot=ak.num(pho, axis=1)
         pho_nloose=ak.num(pho_loose, axis=1)
 
+
         
         j = events.Jet
         j['isclean'] = (
@@ -510,35 +590,47 @@ class AnalysisProcessor(processor.ProcessorABC):
         ###
         # Calculate derivatives
         ###
+        mbb = np.zeros(len(events), dtype="float")
+        mqq = np.zeros(len(events), dtype="float")
+        q2pt = np.zeros(len(events), dtype="float")
 
-        j_candidates = j_soft[ak.argsort(j_soft.particleNetAK4_QvsG, axis=1, ascending=False)]#particleNetAK4_QvsG btagPNetQvG
-        j_candidates = j_candidates[:, :4] #consider only the first 4
+
+        j_candidates = j_soft[ak.argsort(j_soft.particleNetAK4_QvsG, axis=1, ascending=False)] #particleNetAK4_QvsG btagPNetQvG
+	j_candidates = j_candidates[:, :5] #consider only the first 5
         j_candidates = j_candidates[ak.argsort(j_candidates.particleNetAK4_B, axis=1, ascending=False)]#particleNetAK4_B btagPNetB
+	    
+        valid_jets = ak.num(j_candidates) >= 2
 
-        try:
-            bb = j_candidates[:, 0] + j_candidates[:, 1]
-            mbb = bb.mass
-        except:
-            mbb = np.zeros(len(events), dtype='float')
+        if ak.any(valid_jets):  # Proceed only if there are valid events
+            bb = j_candidates[valid_jets][:, 0] + j_candidates[valid_jets][:, 1]
+            mbb[valid_jets] = bb.mass
 
-        try:
-            qq = j_candidates[:, -1] + j_candidates[:, -2]
-            mqq = qq.mass
-        except:
-            mqq = np.zeros(len(events), dtype='float')
-        
+            qq = j_candidates[valid_jets][:, -1] + j_candidates[valid_jets][:, -2]
+            mqq[valid_jets] = qq.mass
+            
         j_candidates = j_candidates[:, -2:]
         j_candidates = j_candidates[ak.argsort(j_candidates.pt, axis=1, ascending=False)]
-        try:
-            q2pt = j_candidates[:, -1].pt
-        except:
-            q2pt = np.zeros(len(events), dtype='float')
-            
-        def neutrino_pz(l,v):
+
+        valid_q2pt = ak.num(j_candidates) >= 1
+
+        if ak.any(valid_q2pt):
+            q2pt[valid_q2pt] = j_candidates[valid_q2pt][:, -1].pt
+
+	jb_candidates = ak.pad_none(j_candidates[:,:2], 2,axis=1) # two b-jets
+        j_candidates = j_candidates[:,2:] #3 non b-jets
+        j_candidates = j_candidates[ak.argsort(j_candidates.pt, axis=1, ascending=False)] #pt sort the jets
+
+        jj_i = ak.argcombinations(j_candidates,2,fields=["j1","j2"]) #take dijet combinations
+        jj_i = jj_i[(j_candidates[jj_i.j1]- j_candidates[jj_i.j2]).eta<2.0]
+        jj_i = jj_i[(j_candidates[jj_i.j1]+ j_candidates[jj_i.j2]).mass<120.0] #dijet cuts
+        jj_tt_mask =  ak.pad_none(j_candidates[jj_i.j2].pt>20.0, 3, axis=1) # select subleading pt > 20 for TTbar
+
+        #ttbar and hadronic W neutrino pz reconstruction
+        def nu_pz(l,v):
             m_w = 80.379
             m_l = l.mass            
-            A = (l.px*v.px+l.py*v.py) + (m_w**2 - m_l**2)/2
-            B = l.energy**2*(v.px**2+v.py**2)
+            A = (l.px*v.pt * np.cos(v.phi)+l.py*v.pt * np.sin(v.phi)) + (m_w**2 - m_l**2)/2
+            B = l.energy**2*((v.pt * np.cos(v.phi))**2+(v.pt * np.sin(v.phi))**2)
             C = l.energy**2 - l.pz**2
             discriminant = (2 * A * l.pz)**2 - 4 * (B - A**2) * C
             # avoiding imaginary solutions
@@ -546,49 +638,196 @@ class AnalysisProcessor(processor.ProcessorABC):
             pz_1 = (2*A*l.pz + sqrt_discriminant)/(2*C)
             pz_2 = (2*A*l.pz - sqrt_discriminant)/(2*C)
             return ak.where(abs(pz_1) < abs(pz_2), pz_1, pz_2)
-
+            
+        # hadronic W* signal reconstruction
         v_e = ak.zip(
             {
-                "x": met.px,
-                "y": met.py,
-                "z": neutrino_pz(leading_e, met),
-                "t": np.sqrt(met.pt**2+neutrino_pz(leading_e, met)**2) ,
+                "x": met.pt * np.cos(met.phi),
+		"y": met.pt * np.sin(met.phi),
+	        "z": nu_pz(leading_e, met),
+                "t": np.sqrt(met.pt**2 + nu_pz(leading_e, met)**2)
             },
             with_name="LorentzVector",
             behavior=vector.behavior,
         )
-        try:
-            evqq = leading_e + v_e + qq
-            mevqq = evqq.mass
-        except:
-            mevqq = np.zeros(len(events), dtype='float')
 
-        v_m = ak.zip(
+        v_mu = ak.zip(
             {
-                "x": met.px,
-                "y": met.py,
-                "z": neutrino_pz(leading_mu, met),
-                "t": np.sqrt(met.pt**2+neutrino_pz(leading_mu, met)**2) ,
+                "x": met.pt * np.cos(met.phi),
+                "y": met.pt * np.sin(met.phi),
+                "z": nu_pz(leading_mu, met),
+                "t": np.sqrt(met.pt**2+nu_pz(leading_mu, met)**2) ,
             },
             with_name="LorentzVector",
             behavior=vector.behavior,
         )
-        try:
-            mvqq = leading_mu + v_mu + qq
-            mmvqq = mvqq.mass
-        except:
-            mmvqq = np.zeros(len(events), dtype='float')
 
-        mlvqq = {
+        v_mu = ak.mask(v_mu, ~np.isnan(v_mu.pz))
+        v_e = ak.mask(v_e, ~np.isnan(v_e.pz)) #avoid calculations for imaginary solutions
+
+        # H -> lvqq with electrons and muons
+        mevqq = (leading_e + v_e + qq).mass
+        mmuvqq = (leading_mu + v_e + qq).mass
+
+        l_mu = ~ak.is_none(leading_mu.pt)
+        l_e = ~ak.is_none(leading_e.pt)
+        muge = leading_mu.pt > leading_e.pt
+
+	#mass of H -> lvqq for hadronic W* signal selection    
+        mlvqq_hadWs_sel = {
             'esr'  : mevqq,
-            'msr'  : mmvqq
+            'msr'  : mmuvqq
+        }
+         
+	mlvqq_hadWs = ak.where(l_mu & l_e,
+                         ak.where(muge, mlvqq_hadWs_sel['msr'], mlvqq_hadWs_sel['esr']),
+                         ak.where(l_mu, mlvqq_hadWs_sel['msr'], mlvqq_hadWs_sel['esr'])
+                         ) #select leading lepton combination
+
+        def chi_square(data,mean,std):
+            x_2 = ak.sum(data**2)
+            n = ak.count(data[~ak.is_none(data)])
+            chi2 = ((data - mean)/std)**2
+            return chi2, mean, std
+
+	#individual chi squares for hadronic W* signal selection
+        chi1_hadWs, mean1_hadWs, std1_hadWs = chi_square(mbb,116.02, 45.04) # H -> bb            
+        chi2_hadWs, mean2_hadWs, std2_hadWs = chi_square(mlvqq_hadWs, 173.59, 48.67) # H -> lvqq
+        chi3_hadWs, mean3_hadWs, std3_hadWs = chi_square(qq.mass,41.77, 14.92) #hadronic W*    
+
+	#total chi square
+        chi_sq_hadWs = np.sqrt(chi1_hadWs + chi2_hadWs + chi3_hadWs)
+        min_chi_sq_hadWs = ak.argmin(chi_sq_hadWs, axis=1, keepdims = True) #index of the minimum chi square non-bjet pair
+        chi_sq_hadWs = chi_sq_hadWs[min_chi_sq_hadWs]
+        
+        jj_gen_mass = ak.pad_none((j_candidates[jj_i.j1].matched_gen + j_candidates[jj_i.j2].matched_gen).mass, 3, axis=1) #get gen mass of dijet candidates
+        jj_sel_gen_mass_hadWs =  ak.fill_none(ak.firsts(jj_gen_mass[min_chi_sq_hadWs]),-1) #gen mass of the di jet pair with minimum chi square
+        
+        ## end hadronic W* signal reconstruction
+
+        ## hadronic W signal reconstruction
+        def nu_pz_Ws(l,nu,W):
+            m_H = 125.35
+        
+            A = m_H**2 - W.mass**2 - l.mass**2 - 2*l.energy*W.energy + 2*(l.px*W.px + l.py*W.py + l.pz*W.pz) + 2*(l.px*nu.pt * np.cos(nu.phi) + l.py*nu.pt * np.sin(nu.phi) + W.px*nu.pt * np.cos(nu.phi) + W.py*nu.pt * np.sin(nu.phi))
+            B = A**2/4 - (l.energy + W.energy)**2*((nu.pt * np.cos(nu.phi))**2 + (nu.pt * np.sin(nu.phi))**2)
+            C = (l.pz + W.pz)**2 - (l.energy + W.energy)**2
+        
+            discriminant = A**2*(l.pz+W.pz)**2 - 4*B*C
+            sqrt_discriminant = ak.where(discriminant >= 0, np.sqrt(discriminant),np.nan) # avoiding imaginary solutions
+        
+            pz_1 = (-A*(l.pz + W.pz) + sqrt_discriminant)/(2*C)
+            pz_2 = (-A*(l.pz + W.pz) - sqrt_discriminant)/(2*C)
+            pz =  ak.where(abs(pz_1) < abs(pz_2), pz_1, pz_2)                  
+        
+            return pz
+
+        v_e_hadW = ak.zip(
+            {
+	        "x": met.pt * np.cos(met.phi),
+                "y": met.pt * np.sin(met.phi),
+                "z": nu_pz_Ws(leading_e, met, qq),
+                "t": np.sqrt(met.pt**2 + nu_pz_Ws(leading_e, met, qq)**2)
+            },
+            with_name="LorentzVector",
+            behavior=vector.behavior,
+	        )
+
+        v_mu_hadW = ak.zip(
+            {
+                "x": met.pt * np.cos(met.phi),
+		"y": met.pt * np.sin(met.phi),
+                "z": nu_pz_Ws(leading_mu, met, qq),
+                "t": np.sqrt(met.pt**2 + nu_pz_Ws(leading_mu, met, qq)**2)
+            },
+            with_name="LorentzVector",
+            behavior=vector.behavior,
+	        )
+        
+        v_mu_hadW = ak.mask(v_mu_hadW, ~np.isnan(v_mu_hadW.pz))
+        v_e_hadW = ak.mask(v_e_hadW, ~np.isnan(v_e_hadW.pz)) #avoid calculations for imaginary solutions that are not always skipped
+        
+        # H -> lvqq with electrons and muons for hadronic W signal
+        mlvqq_hadW_sel = {
+            'esr'  : (leading_e + v_e_hadW + qq).mass,
+            'msr'  : (leading_mu + v_e_hadW + qq).mass
         }
         
+        #transverse mass
         mT = {
             'esr'  : np.sqrt(2*leading_e.pt*met.pt*(1-np.cos(met.delta_phi(leading_e.T)))),
             'msr'  : np.sqrt(2*leading_mu.pt*met.pt*(1-np.cos(met.delta_phi(leading_mu.T))))
         }
 
+        mT_leading_lep = ak.where(l_mu & l_e,
+                         ak.where(muge, mT['msr'], mT['esr']),
+                         ak.where(l_mu, mT['msr'], mT['esr'])
+                         ) #take the transverse mass with leading pT lepton
+
+        qq_cut = ak.mask(qq, abs(mlvqq_hadW - 125.35) < 5) #dropping the 'tail' of Higgs mass plot
+
+        chi1_hadW, mean1_hadW, std1_hadW = chi_square(mbb,115.33, 46.29) # H -> bb
+        chi2_hadW, mean2_hadW, std2_hadW = chi_square(mT_leading_lep, 58.87, 37.35) #transverse mass             
+        chi3_hadW, mean3_hadW, std3_hadW = chi_square(qq_cut.mass,66.89, 10.98) #hadronic W
+
+        chi_sq_hadW = np.sqrt(chi1_hadW + chi2_hadW + chi3_hadW)
+        min_chi_sq_hadW= ak.argmin(chi_sq_hadW, axis=1, keepdims = True) #index of the minimum chi square non-bjet pair
+        chi_sq_hadW = chi_sq_hadW[min_chi_sq_hadW]
+
+        #separate regions as done previously
+        jj_sel_gen_mass_hadW =  ak.fill_none(ak.firsts(jj_gen_mass[min_chi_sq_hadW]),-1) #gen mass of the di jet pair with minimum chi square
+	#end hadronic W signal reconstruction
+	    
+        ## ttbar reconstruction
+        
+        #leptonic top with electrons
+        mevb1 = (leading_e + v_e + ak.pad_none(jb_candidates,2,axis=1)[:,0]).mass
+        mevb2 = (leading_e + v_e + ak.pad_none(jb_candidates,2,axis=1)[:,1]).mass
+
+        #leptonic top with muons
+        mmvb1 = (leading_mu + v_mu + ak.pad_none(jb_candidates,2,axis=1)[:,0]).mass
+        mmvb2 = (leading_mu + v_mu + ak.pad_none(jb_candidates,2,axis=1)[:,1]).mass
+
+        mlvb1 = ak.where(l_mu & l_e,
+                         ak.where(muge, mmvb1, mevb1),
+                         ak.where(l_mu, mmvb1, mevb1)
+                         ) #leptonic candidate 1
+
+        mlvb2 = ak.where(l_mu & l_e,
+                         ak.where(muge, mmvb2, mevb2),
+                         ak.where(l_mu, mmvb2, mevb2)
+                         ) #leptonic candidate 2  
+
+        mbqq1 = ak.pad_none((ak.pad_none(jb_candidates,2,axis=1)[:,0] + ak.mask(qq, jj_tt_mask)).mass,3,axis=1) #hadronic candidate 1
+        mbqq2 = ak.pad_none((ak.pad_none(jb_candidates,2,axis=1)[:,1] + ak.mask(qq, jj_tt_mask)).mass,3,axis=1) #hadronic candidate 2
+
+        def distance(x1,y1,x2,y2):
+            return np.sqrt((x2-x1)**2+(y2-y1)**2)
+        
+        #ttbar candidates
+        tt1 = ak.cartesian({"t1":mlvb1,"t2":mbqq2},axis=1)
+        tt2 = ak.cartesian({"t1":mlvb2,"t2":mbqq1},axis=1)
+        b_sel = abs(distance(tt1.t1,tt1.t2,172.5,172.5)) <  abs(distance(tt2.t1,tt2.t2,172.5,172.5)) #pick pair closest to ttbar mass
+
+        #conditions to work around None values
+        c1 = ~ak.is_none(distance(tt1.t1, tt1.t2,172.5,172.5))
+        c2 = ~ak.is_none(distance(tt2.t1, tt2.t2,172.5,172.5))
+
+        #final ttbar candidates
+        tt = ak.pad_none(ak.where( c1 & c2, ak.where(b_sel, tt1 , tt2), ak.where(c1, tt1, tt2)),3,axis=1)
+
+        qq_tt = ak.mask(qq, ak.pad_none((j_candidates[jj_i.j1].pt > 20.0),3,axis=1)) #select leading pT jet > 20 GeV for ttbar
+        chi1_tt, mean1_tt, std1_tt = chi_square(tt.t1,194.93 , 47.59 ) #leptonic top
+        chi2_tt, mean2_tt, std2_tt = chi_square(tt.t2, 171.55, 44.95 ) #hadronic top
+        chi3_tt, mean3_tt, std3_tt = chi_square(qq_tt.mass,73.9, 23.56) #hadronic W
+        
+        chi_sq_tt = np.sqrt(chi1_tt + chi2_tt + chi3_tt)
+        min_chi_sq_tt = ak.argmin(chi_sq_tt, axis=1, keepdims = True) #get index of the minimum chi square 
+        chi_sq_tt = chi_sq_tt[min_chi_sq_tt]
+
+        jj_sel_gen_mass_tt =  ak.fill_none(ak.firsts(jj_gen_mass[min_chi_sq_tt]),-1) #gen mass of the di jet pair with minimum chi square
+        #end ttbar reconstruction    
+	    
         ###
         #Calculating weights
         ###
@@ -769,8 +1008,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         selection.add('noHEMj', noHEMj)
         selection.add('noHEMmet', noHEMmet)
         regions = {
-            'esr': ['isoneE', 'noHEMj', 'njets', 'nbjets', 'met_filters', 'noHEMmet'],
-            'msr': ['isoneM', 'noHEMj', 'njets', 'nbjets', 'met_filters', 'noHEMmet']
+            'esr': ['isoneE', 'noHEMj', 'njets', 'nbjets', 'met_filters', 'noHEMmet', 'singleelectron_triggers', 'lumimask'],
+            'msr': ['isoneM', 'noHEMj', 'njets', 'nbjets', 'met_filters', 'noHEMmet', 'singlemuon_triggers', 'lumimask']
         }
         
 
@@ -803,6 +1042,10 @@ class AnalysisProcessor(processor.ProcessorABC):
                     'mbb':                    mbb,
                     'mqq':                    mqq,
                     'q2pt':                   q2pt
+		    'chi_hadW':               ak.firsts(chi_sq_hadW), #hadronic W signal selection 
+                    'chi_hadWs':              ak.firsts(chi_sq_hadWs),#hadronic W star signal selection
+                    'chi_tt':                 ak.firsts(chi_sq_tt), #ttbar selection
+
                 }
                 if 'e' in region:
                     variables['l1pt']      = leading_e.pt
@@ -819,6 +1062,10 @@ class AnalysisProcessor(processor.ProcessorABC):
                     normalized_variable = {variable: normalize(variables[variable],cut)}
                     output[variable].fill(
                         region=region,
+			dataset= dataset,
+                        sr_hadw =  jj_sel_gen_mass_hadW[cut], #each chi square selection gives different jet combinations, need three separate ones here
+                        sr_hadws = jj_sel_gen_mass_hadWs[cut],#if looking at hadronic W chi square, filter using sr_hadw, hadronic W* with sr_hadws and so on
+                        br_tt =    jj_sel_gen_mass_tt[cut],
                         **normalized_variable,
                         weight=weight,
                     )

@@ -193,7 +193,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             'sumw': 0.,
             'met': hist.Hist(
                 hist.axis.StrCategory([], name='region', growth=True),
-	        hist.axis.Variable([-10, 0, 55,1000], name="sr_hadw", label="regions_hadronicW_selection"), # the first bin stores None values (jets that have matching gen jets)
+	        hist.axis.Variable([-10, 0, 55,1000], name="sr_hadw", label="regions_hadronicW_selection"), # the first bin stores None values (jets that have no matching gen jets)
                 hist.axis.Variable([-10, 0, 55,1000], name="sr_hadws", label="regions_hadronicWs_selection"),
                 hist.axis.Variable([-10, 0, 55,1000], name="br_tt", label="regions_ttbar_selection"),
                 hist.axis.Regular(30,0,600, name='met', label='MET'),

@@ -14,6 +14,10 @@ from coffea.util import load, save
 from optparse import OptionParser
 from coffea.nanoevents.methods import vector
 import gzip
+import sys 
+import logging 
+
+
 
 def update(events, collections):
     """Return a shallow copy of events array with some collections swapped out"""
@@ -147,6 +151,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         self._ids         = load(f'{path}/ids.coffea')
         self._common      = load(f'{path}/common.coffea')
 
+
     
 
         ptbins=[15.0,
@@ -262,6 +267,10 @@ class AnalysisProcessor(processor.ProcessorABC):
     }
 
     def process(self, events):
+        if len(events) == 0:
+            print(f"Empty chunk from file: {events.metadata['filename']}")
+        else:
+            print(f"Processing chunk from file: {events.metadata['filename']}")
         isData = not hasattr(events, "genWeight")
         if isData:
             # Nominal JEC are already applied in data
@@ -274,10 +283,14 @@ class AnalysisProcessor(processor.ProcessorABC):
         jec_cache = cachetools.Cache(np.inf)
     
         nojer = "NOJER" if self._skipJER else ""
-        if events.metadata['year']: 
-            self._year = events.metadata['year'].replace('UL','20').replace("_", "")
+
+        if 'year' in events.metadata:
+            self._year = events.metadata['year'].replace('UL', '20').replace("_", "")
             self._lumi = events.metadata['lumi']
-        thekey = f"{self._year}mc{nojer}"
+        if self._year is not None:
+            thekey = f"{self._year}mc{nojer}"
+        else:
+            thekey = None  # Handle the case where 'year' is not present
 
         def add_jec_variables(jets, event_rho):
             jets["pt_raw"] = (1 - jets.rawFactor)*jets.pt
@@ -305,7 +318,6 @@ class AnalysisProcessor(processor.ProcessorABC):
         return processor.accumulate(self.process_shift(update(events, collections), name) for collections, name in shifts)
 
     def process_shift(self, events, shift_name):
-
         dataset = events.metadata['dataset']
 
         selected_regions = []
@@ -325,6 +337,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         #Getting corrections, ids from .coffea files
         ###
 
+        
         get_ele_loose_id_sf      = self._corrections['get_ele_loose_id_sf']
         get_ele_tight_id_sf      = self._corrections['get_ele_tight_id_sf']
         get_ele_trig_weight      = self._corrections['get_ele_trig_weight']
@@ -341,7 +354,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         get_nnlo_nlo_weight      = self._corrections['get_nnlo_nlo_weight']
         get_btag_weight          = self._corrections['get_btag_weight']
         get_ttbar_weight         = self._corrections['get_ttbar_weight']
-        
+    
+
         isLooseElectron = self._ids['isLooseElectron'] 
         isTightElectron = self._ids['isTightElectron'] 
         isLooseMuon     = self._ids['isLooseMuon']     
@@ -362,7 +376,6 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         npv = events.PV.npvsGood 
         run = events.run
-        #calomet = events.CaloMET
         met = events.MET
         met['pt'] , met['phi'] = get_met_xy_correction(self._year, npv, run, met.pt, met.phi, isData)
 
@@ -471,6 +484,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         pho_ntot=ak.num(pho, axis=1)
         pho_nloose=ak.num(pho_loose, axis=1)
 
+
         
         j = events.Jet
         j['isclean'] = (
@@ -510,29 +524,35 @@ class AnalysisProcessor(processor.ProcessorABC):
         ###
         # Calculate derivatives
         ###
+        mbb = np.zeros(len(events), dtype="float")
+        mqq = np.zeros(len(events), dtype="float")
+        q2pt = np.zeros(len(events), dtype="float")
 
-        j_candidates = j_soft[ak.argsort(j_soft.particleNetAK4_QvsG, axis=1, ascending=False)]#particleNetAK4_QvsG btagPNetQvG
+
+        j_candidates = j_soft[ak.argsort(j_soft.particleNetAK4_QvsG, axis=1, ascending=False)] #particleNetAK4_QvsG btagPNetQvG
+
         j_candidates = j_candidates[:, :4] #consider only the first 4
+
         j_candidates = j_candidates[ak.argsort(j_candidates.particleNetAK4_B, axis=1, ascending=False)]#particleNetAK4_B btagPNetB
 
-        try:
-            bb = j_candidates[:, 0] + j_candidates[:, 1]
-            mbb = bb.mass
-        except:
-            mbb = np.zeros(len(events), dtype='float')
 
-        try:
-            qq = j_candidates[:, -1] + j_candidates[:, -2]
-            mqq = qq.mass
-        except:
-            mqq = np.zeros(len(events), dtype='float')
-        
+        valid_jets = ak.num(j_candidates) >= 2
+
+        if ak.any(valid_jets):  # Proceed only if there are valid events
+            bb = j_candidates[valid_jets][:, 0] + j_candidates[valid_jets][:, 1]
+            mbb[valid_jets] = bb.mass
+
+            qq = j_candidates[valid_jets][:, -1] + j_candidates[valid_jets][:, -2]
+            mqq[valid_jets] = qq.mass
+            
         j_candidates = j_candidates[:, -2:]
         j_candidates = j_candidates[ak.argsort(j_candidates.pt, axis=1, ascending=False)]
-        try:
-            q2pt = j_candidates[:, -1].pt
-        except:
-            q2pt = np.zeros(len(events), dtype='float')
+
+        valid_q2pt = ak.num(j_candidates) >= 1
+
+        if ak.any(valid_q2pt):
+            q2pt[valid_q2pt] = j_candidates[valid_q2pt][:, -1].pt
+
             
         def neutrino_pz(l,v):
             m_w = 80.379
@@ -596,7 +616,6 @@ class AnalysisProcessor(processor.ProcessorABC):
         if not isData:
             
             gen = events.GenPart
-
             gen['isTop'] = (abs(gen.pdgId)==6)&gen.hasFlags(['fromHardProcess', 'isLastCopy'])
             genTops = gen[gen.isTop]
             nlo = np.ones(len(events), dtype='float')
@@ -613,24 +632,23 @@ class AnalysisProcessor(processor.ProcessorABC):
             nnlo_nlo = {}
             nlo_qcd = np.ones(len(events), dtype='float')
             nlo_ewk = np.ones(len(events), dtype='float')
+
             if('WJets' in dataset): 
-                nlo_qcd = get_nlo_qcd_weight['w'](genWs.pt.max())
-                nlo_ewk = get_nlo_ewk_weight['w'](genWs.pt.max())
-                for systematic in get_nnlo_nlo_weight['w']:
-                    nnlo_nlo[systematic] = get_nnlo_nlo_weight['w'][systematic](genWs.pt.max())*((ak.num(genWs, axis=1)>0)&(genWs.pt.max()>=100)) + \
-                                           (~((ak.num(genWs, axis=1)>0)&(genWs.pt.max()>=100))).astype(np.int)
+                nlo_ewk = get_nlo_ewk_weight('w', ak.firsts(genWs).pt)
+                for systematic in get_nnlo_nlo_weight(self._year, 'w', ak.firsts(genWs).pt):
+                    nnlo_nlo[systematic] = ak.where(
+                        ((ak.num(genWs, axis=1)>0)&(ak.firsts(genWs).pt>=100)),
+                        get_nnlo_nlo_weight(self._year, 'w', ak.firsts(genWs).pt)[systematic],
+                        np.ones(len(events), dtype='float')
+                  )
             elif('DY' in dataset): 
-                nlo_qcd = get_nlo_qcd_weight['dy'](genDYs.pt.max())
-                nlo_ewk = get_nlo_ewk_weight['dy'](genDYs.pt.max())
-                for systematic in get_nnlo_nlo_weight['dy']:
-                    nnlo_nlo[systematic] = get_nnlo_nlo_weight['dy'][systematic](genDYs.pt.max())*((ak.num(genDYs, axis=1)>0)&(genDYs.pt.max()>=100)) + \
-                                           (~((ak.num(genDYs, axis=1)>0)&(genDYs.pt.max()>=100))).astype(np.int)
-            elif('ZJets' in dataset): 
-                nlo_qcd = get_nlo_qcd_weight['z'](genZs.pt.max())
-                nlo_ewk = get_nlo_ewk_weight['z'](genZs.pt.max())
-                for systematic in get_nnlo_nlo_weight['z']:
-                    nnlo_nlo[systematic] = get_nnlo_nlo_weight['z'][systematic](genZs.pt.max())*((ak.num(genZs, axis=1)>0)&(genZs.pt.max()>=100)) + \
-                                           (~((ak.num(genZs, axis=1)>0)&(genZs.pt.max()>=100))).astype(np.int)
+                        nlo_ewk = get_nlo_ewk_weight('dy', ak.firsts(genDYs).pt)
+                        for systematic in get_nnlo_nlo_weight(self._year, 'dy', ak.firsts(genDYs).pt):
+                            nnlo_nlo[systematic] = ak.where(
+                                ((ak.num(genDYs, axis=1)>0)&(ak.firsts(genDYs).pt>=100)),
+                                get_nnlo_nlo_weight(self._year, 'dy', ak.firsts(genDYs).pt)[systematic],
+                                np.ones(len(events), dtype='float')
+                            )
 
             ###
             # Calculate PU weight and systematic variations
@@ -647,6 +665,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                 #'msr':   get_mu_trig_weight(self._year, leading_mu.eta, leading_mu.pt)
                 'msr': np.ones(len(events), dtype='float'),
             }
+            
 
             ### 
             # Calculating electron and muon ID weights
@@ -680,6 +699,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             # AK4 b-tagging weights
             ###
 
+
             btagSF, \
             btagSFbc_correlatedUp, \
             btagSFbc_correlatedDown, \
@@ -694,6 +714,8 @@ class AnalysisProcessor(processor.ProcessorABC):
                 j_good.hadronFlavour,
                 j_good.isdflvM
             )
+
+
 
             if hasattr(events, "L1PreFiringWeight"): 
                 weights.add('prefiring', events.L1PreFiringWeight.Nom, events.L1PreFiringWeight.Up, events.L1PreFiringWeight.Dn)
@@ -724,7 +746,6 @@ class AnalysisProcessor(processor.ProcessorABC):
             weights.add('btagSFbc_uncorrelated',np.ones(len(events), dtype='float'), btagSFbc_uncorrelatedUp/btagSF, btagSFbc_uncorrelatedDown/btagSF)
             weights.add('btagSFlight_correlated',np.ones(len(events), dtype='float'), btagSFlight_correlatedUp/btagSF, btagSFlight_correlatedDown/btagSF)
             weights.add('btagSFlight_uncorrelated',np.ones(len(events), dtype='float'), btagSFlight_uncorrelatedUp/btagSF, btagSFlight_uncorrelatedDown/btagSF)
-            
 
         
         ###
@@ -741,8 +762,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         for flag in AnalysisProcessor.met_filters[self._year]:
             met_filters = met_filters & events.Flag[flag]
         selection.add('met_filters',met_filters)
-
-
+        
         triggers = np.zeros(len(events), dtype='bool')
         for path in self._singleelectron_triggers[self._year]:
             if not hasattr(events.HLT, path): continue
@@ -769,8 +789,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         selection.add('noHEMj', noHEMj)
         selection.add('noHEMmet', noHEMmet)
         regions = {
-            'esr': ['isoneE', 'noHEMj', 'njets', 'nbjets', 'met_filters', 'noHEMmet'],
-            'msr': ['isoneM', 'noHEMj', 'njets', 'nbjets', 'met_filters', 'noHEMmet']
+            'esr': ['isoneE', 'noHEMj', 'njets', 'nbjets', 'met_filters', 'noHEMmet', 'singleelectron_triggers', 'lumimask'],
+            'msr': ['isoneM', 'noHEMj', 'njets', 'nbjets', 'met_filters', 'noHEMmet', 'singlemuon_triggers', 'lumimask']
         }
         
 
@@ -784,12 +804,17 @@ class AnalysisProcessor(processor.ProcessorABC):
                 
         def fill(region, systematic):
             cut = selection.all(*regions[region])
+
             sname = 'nominal' if systematic is None else systematic
+            
             if systematic in weights.variations:
                 weight = weights.weight(modifier=systematic)[cut]
+                
             else:
                 weight = weights.weight()[cut]
-            if systematic is None:
+
+
+            if systematic is None and ak.any(cut):
                 variables = {
                     'met':                    met.pt,
                     'metphi':                 met.phi,
@@ -812,7 +837,6 @@ class AnalysisProcessor(processor.ProcessorABC):
                     variables['l1pt']      = leading_mu.pt
                     variables['l1phi']     = leading_mu.phi
                     variables['l1eta']     = leading_mu.eta
-                
                 for variable in output:
                     if variable not in variables:
                         continue
@@ -831,9 +855,6 @@ class AnalysisProcessor(processor.ProcessorABC):
         for region in regions:
             if region not in selected_regions: continue
 
-            ###
-            # Adding recoil and minDPhi requirements
-            ###
 
             for systematic in systematics:
                 if isData and systematic is not None:
@@ -853,7 +874,7 @@ class AnalysisProcessor(processor.ProcessorABC):
             if key=='sumw': 
                 continue
             output[key] *= scale
-                
+        
         return output
 
     def postprocess(self, accumulator):

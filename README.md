@@ -33,6 +33,8 @@ source ~/lpc-scripts/call_host.sh
 Now you should log out and log back in for the changes to take effect. To start the container use the following command. 
 
 ```
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+
 cmssw-el7 -p --bind `readlink $HOME` --bind `readlink -f ${HOME}/nobackup/` --bind /uscms_data --bind /cvmfs -- /bin/bash
 ```
 
@@ -40,8 +42,6 @@ Install `CMSSW_11_3_4` in your `nobackup` area:
 
 ```
 cd ~/nobackup
-
-source /cvmfs/cms.cern.ch/cmsset_default.sh
 cmsrel CMSSW_11_3_4
 cd CMSSW_11_3_4/src
 cmsenv
@@ -122,6 +122,21 @@ cd CMSSW_11_3_4/src
 cmsenv
 ```
 
+If you get an error saying: 
+
+```
+ERROR: Project "CMSSW" version "CMSSW_11_3_4" is not available for arch el9_amd64_gcc12.
+       Please make sure you have used the correct name/version.
+       You can run "scram list $projectname" to get the list of available versions.
+```
+
+Do: 
+
+```
+export SCRAM_ARCH=slc7_amd64_gcc900
+```
+
+and try again. 
 
 
 ### Installing Packages

@@ -1,0 +1,2 @@
+root://eoscms.cern.ch:1094//store/data/Run2016B/SingleElectron/NANOAOD/ver2_HIPM_UL2016_MiniAODv2_JMENanoAODv9-v1/40000/E9E47FA5-66D3-A746-A6DA-E792FF7A3BE1.root
+root://eoscms.cern.ch:1094//store/data/Run2016B/SingleElectron/NANOAOD/ver2_HIPM_UL2016_MiniAODv2_JMENanoAODv9-v1/40000/00B929EB-E442-E74A-A0CA-0190F72B98BA.root

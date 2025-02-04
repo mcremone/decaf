@@ -90,13 +90,14 @@ if options.cluster == 'lxplus':
 executable              = run.sh
 should_transfer_files   = YES
 when_to_transfer_output = ON_EXIT
-transfer_input_files    = run.sh, /afs/cern.ch/user/m/mcremone/private/x509up
+transfer_input_files    = run.sh, /afs/cern.ch/user/$ENV(INITIAL)/$ENV(USER)/private/x509up
 output                  = logs/condor/run/out/$ENV(PROCESSOR)_$ENV(SAMPLE)_$(Cluster)_$(Process).stdout
 error                   = logs/condor/run/err/$ENV(PROCESSOR)_$ENV(SAMPLE)_$(Cluster)_$(Process).stderr
 log                     = logs/condor/run/log/$ENV(PROCESSOR)_$ENV(SAMPLE)_$(Cluster)_$(Process).log
-TransferOutputRemaps    = "$ENV(PROCESSOR)_$ENV(SAMPLE).futures=$ENV(PWD)/hists/$ENV(PROCESSOR)/$ENV(SAMPLE).futures"
+TransferOutputRemaps    = "$ENV(PROCESSOR)_$ENV(SAMPLE).futures=/eos/user/$ENV(INITIAL)/$ENV(USER)/CMSSW_11_3_4/src/decaf/analysis/hists/$ENV(PROCESSOR)/$ENV(SAMPLE).futures"
 Arguments               = $ENV(METADATA) $ENV(SAMPLE) $ENV(PROCESSOR) $ENV(CLUSTER) $ENV(USER)
 MY.SingularityImage     = "/cvmfs/unpacked.cern.ch/gitlab-registry.cern.ch/cms-cat/cmssw-lxplus/cmssw-el7-lxplus:latest/"
+output_destination      = root://eosuser.cern.ch//eos/user/$ENV(INITIAL)/$ENV(USER)/CMSSW_11_3_4/src/decaf/analysis/
 request_cpus            = 8
 request_memory          = 16000
 JobBatchName            = $ENV(BTCN)
@@ -126,6 +127,14 @@ for dataset, info in datadef.items():
     os.environ['PROCESSOR']   = options.processor
     os.environ['METADATA']   = options.metadata
     os.environ['CLUSTER'] = options.cluster
+    if options.cluster == 'lxplus':
+        os.environ['INITIAL'] = os.environ['USER'][0]
+        os.system('mkdir -p /eos/user/'+os.environ['USER'][0] +'/'+ os.environ['USER']+'/CMSSW_11_3_4/src/decaf/analysis/logs/condor/run/err/')
+        os.system('rm -rf /eos/user/'+os.environ['USER'][0] +'/'+ os.environ['USER']+'/CMSSW_11_3_4/src/decaf/analysis/logs/condor/run/err/*'+options.processor+'*'+dataset+'*')
+        os.system('mkdir -p /eos/user/'+os.environ['USER'][0] +'/'+ os.environ['USER']+'/CMSSW_11_3_4/src/decaf/analysis/logs/condor/run/log/')
+        os.system('rm -rf /eos/user/'+os.environ['USER'][0] +'/'+ os.environ['USER']+'/CMSSW_11_3_4/src/decaf/analysis/logs/condor/run/log/*'+options.processor+'*'+dataset+'*')
+        os.system('mkdir -p /eos/user/'+os.environ['USER'][0] +'/'+ os.environ['USER']+'/CMSSW_11_3_4/src/decaf/analysis/logs/condor/run/out/')
+        os.system('rm -rf /eos/user/'+os.environ['USER'][0] +'/'+ os.environ['USER']+'/CMSSW_11_3_4/src/decaf/analysis/logs/condor/run/out/*'+options.processor+'*'+dataset+'*')
     if options.cluster == 'lpc':
         jdl_dataset = jdl
         jdl_dataset = jdl_dataset.replace('%SAMPLE%', dataset)

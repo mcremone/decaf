@@ -342,7 +342,6 @@ class AnalysisProcessor(processor.ProcessorABC):
 
     def process(self, events):
         isData = not hasattr(events, "genWeight")
-        #log_message('isData')
         if isData:
             # Nominal JEC are already applied in data
             return self.process_shift(events, None)
@@ -596,7 +595,7 @@ class AnalysisProcessor(processor.ProcessorABC):
 
 
         j_candidates = j_soft[ak.argsort(j_soft.particleNetAK4_QvsG, axis=1, ascending=False)] #particleNetAK4_QvsG btagPNetQvG
-	j_candidates = j_candidates[:, :5] #consider only the first 5
+	    j_candidates = j_candidates[:, :5] #consider only the first 5
         j_candidates = j_candidates[ak.argsort(j_candidates.particleNetAK4_B, axis=1, ascending=False)]#particleNetAK4_B btagPNetB
 	    
         valid_jets = ak.num(j_candidates) >= 2
@@ -643,8 +642,8 @@ class AnalysisProcessor(processor.ProcessorABC):
         v_e = ak.zip(
             {
                 "x": met.pt * np.cos(met.phi),
-		"y": met.pt * np.sin(met.phi),
-	        "z": nu_pz(leading_e, met),
+		        "y": met.pt * np.sin(met.phi),
+	            "z": nu_pz(leading_e, met),
                 "t": np.sqrt(met.pt**2 + nu_pz(leading_e, met)**2)
             },
             with_name="LorentzVector",
@@ -852,24 +851,23 @@ class AnalysisProcessor(processor.ProcessorABC):
             nnlo_nlo = {}
             nlo_qcd = np.ones(len(events), dtype='float')
             nlo_ewk = np.ones(len(events), dtype='float')
+
             if('WJets' in dataset): 
-                nlo_qcd = get_nlo_qcd_weight['w'](genWs.pt.max())
-                nlo_ewk = get_nlo_ewk_weight['w'](genWs.pt.max())
-                for systematic in get_nnlo_nlo_weight['w']:
-                    nnlo_nlo[systematic] = get_nnlo_nlo_weight['w'][systematic](genWs.pt.max())*((ak.num(genWs, axis=1)>0)&(genWs.pt.max()>=100)) + \
-                                           (~((ak.num(genWs, axis=1)>0)&(genWs.pt.max()>=100))).astype(np.int)
+                nlo_ewk = get_nlo_ewk_weight('w', ak.firsts(genWs).pt)
+                for systematic in get_nnlo_nlo_weight(self._year, 'w', ak.firsts(genWs).pt):
+                    nnlo_nlo[systematic] = ak.where(
+                        ((ak.num(genWs, axis=1)>0)&(ak.firsts(genWs).pt>=100)),
+                        get_nnlo_nlo_weight(self._year, 'w', ak.firsts(genWs).pt)[systematic],
+                        np.ones(len(events), dtype='float')
+                  )
             elif('DY' in dataset): 
-                nlo_qcd = get_nlo_qcd_weight['dy'](genDYs.pt.max())
-                nlo_ewk = get_nlo_ewk_weight['dy'](genDYs.pt.max())
-                for systematic in get_nnlo_nlo_weight['dy']:
-                    nnlo_nlo[systematic] = get_nnlo_nlo_weight['dy'][systematic](genDYs.pt.max())*((ak.num(genDYs, axis=1)>0)&(genDYs.pt.max()>=100)) + \
-                                           (~((ak.num(genDYs, axis=1)>0)&(genDYs.pt.max()>=100))).astype(np.int)
-            elif('ZJets' in dataset): 
-                nlo_qcd = get_nlo_qcd_weight['z'](genZs.pt.max())
-                nlo_ewk = get_nlo_ewk_weight['z'](genZs.pt.max())
-                for systematic in get_nnlo_nlo_weight['z']:
-                    nnlo_nlo[systematic] = get_nnlo_nlo_weight['z'][systematic](genZs.pt.max())*((ak.num(genZs, axis=1)>0)&(genZs.pt.max()>=100)) + \
-                                           (~((ak.num(genZs, axis=1)>0)&(genZs.pt.max()>=100))).astype(np.int)
+                        nlo_ewk = get_nlo_ewk_weight('dy', ak.firsts(genDYs).pt)
+                        for systematic in get_nnlo_nlo_weight(self._year, 'dy', ak.firsts(genDYs).pt):
+                            nnlo_nlo[systematic] = ak.where(
+                                ((ak.num(genDYs, axis=1)>0)&(ak.firsts(genDYs).pt>=100)),
+                                get_nnlo_nlo_weight(self._year, 'dy', ak.firsts(genDYs).pt)[systematic],
+                                np.ones(len(events), dtype='float')
+                            )
 
             ###
             # Calculate PU weight and systematic variations
@@ -1042,7 +1040,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                     'mbb':                    mbb,
                     'mqq':                    mqq,
                     'q2pt':                   q2pt
-		    'chi_hadW':               ak.firsts(chi_sq_hadW), #hadronic W signal selection 
+		            'chi_hadW':               ak.firsts(chi_sq_hadW), #hadronic W signal selection 
                     'chi_hadWs':              ak.firsts(chi_sq_hadWs),#hadronic W star signal selection
                     'chi_tt':                 ak.firsts(chi_sq_tt), #ttbar selection
 
@@ -1062,7 +1060,7 @@ class AnalysisProcessor(processor.ProcessorABC):
                     normalized_variable = {variable: normalize(variables[variable],cut)}
                     output[variable].fill(
                         region=region,
-			dataset= dataset,
+			            dataset= dataset,
                         sr_hadw =  jj_sel_gen_mass_hadW[cut], #each chi square selection gives different jet combinations, need three separate ones here
                         sr_hadws = jj_sel_gen_mass_hadWs[cut],#if looking at hadronic W chi square, filter using sr_hadw, hadronic W* with sr_hadws and so on
                         br_tt =    jj_sel_gen_mass_tt[cut],

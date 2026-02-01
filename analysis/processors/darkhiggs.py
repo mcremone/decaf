@@ -120,8 +120,8 @@ class AnalysisProcessor(processor.ProcessorABC):
                 'Events',
                 hist.Cat('dataset', 'Dataset'),
                 hist.Cat('region', 'Region'),
-                #hist.Bin('cut', 'Cut index', 11, 0, 11),
-                hist.Bin('cut', 'Cut index', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]),
+                #hist.Bin('cut', 'Cut index', 15, 0, 15),
+                hist.Bin('cut', 'Cut index', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]),
                 hist.Bin('ZHbbvsQCD','ZHbbvsQCD', [0, self._ZHbbvsQCDwp[self._year], 1])
             ),
             'template': hist.Hist(
@@ -689,7 +689,8 @@ class AnalysisProcessor(processor.ProcessorABC):
 
         regions = {
             #'sr': ['iszeroL','fatjet','noextrab','noHEMmet','met_filters','met_triggers','noHEMj'],
-            'sr': ['msd40','fatjet', 'noHEMj','iszeroL','noextrab','met_filters','met_triggers','noHEMmet'],
+            #'sr': ['msd40','fatjet','noHEMj','iszeroL','noextrab','met_filters','met_triggers','noHEMmet'],
+            'sr': ['met_filters','noHEMj','noHEMmet','met_triggers','fatjet','msd40','iszeroL','noextrab']
             'wmcr': ['msd40','isoneM','fatjet','noextrab','noHEMj','met_filters','met_triggers'],
             'tmcr': ['msd40','isoneM','fatjet','extrab','noHEMj','met_filters','met_triggers'],
             'wecr': ['msd40','isoneE','fatjet','noextrab','noHEMj','met_filters','singleelectron_triggers','met100'],
@@ -712,10 +713,10 @@ class AnalysisProcessor(processor.ProcessorABC):
             selection.add('minDphi_'+region, (abs(u[region].delta_phi(fj_clean.T)).min()>1.5))
             selection.add('calo_'+region, ( (abs(calomet.pt - met.pt) / u[region].mag) < 0.5))
             if 'qcd' not in region:
-                regions[region].insert(0, 'recoil_'+region)
-                regions[region].insert(3, 'mindphi_'+region)
-                regions[region].insert(4, 'minDphi_'+region)
+                regions[region].insert(4, 'recoil_'+region)
                 regions[region].insert(5, 'calo_'+region)
+                regions[region].insert(8, 'mindphi_'+region)
+                regions[region].insert(9, 'minDphi_'+region)
             variables = {
                 'mindphirecoil':          abs(u[region].delta_phi(j_clean.T)).min(),
                 'minDphirecoil':          abs(u[region].delta_phi(fj_clean.T)).min(),

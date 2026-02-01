@@ -690,7 +690,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         regions = {
             #'sr': ['iszeroL','fatjet','noextrab','noHEMmet','met_filters','met_triggers','noHEMj'],
             #'sr': ['msd40','fatjet','noHEMj','iszeroL','noextrab','met_filters','met_triggers','noHEMmet'],
-            'sr': ['met_filters','noHEMj','noHEMmet','met_triggers','fatjet','msd40','iszeroL','noextrab']
+            'sr': ['met_filters','noHEMj','noHEMmet','met_triggers','fatjet','msd40','iszeroL','noextrab'],
             'wmcr': ['msd40','isoneM','fatjet','noextrab','noHEMj','met_filters','met_triggers'],
             'tmcr': ['msd40','isoneM','fatjet','extrab','noHEMj','met_filters','met_triggers'],
             'wecr': ['msd40','isoneE','fatjet','noextrab','noHEMj','met_filters','singleelectron_triggers','met100'],

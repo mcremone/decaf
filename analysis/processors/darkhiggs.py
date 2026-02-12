@@ -679,7 +679,7 @@ class AnalysisProcessor(processor.ProcessorABC):
         selection.add('noHEMmet', noHEMmet)
         selection.add('met120',(met.pt<120))
         selection.add('met100',(met.pt>100))
-        selection.add('msd40',(leading_fj.msd_corr.sum()>40))
+        selection.add('msd40',(leading_fj.msd_corr.sum()>40)&(leading_fj.msd_corr.sum()<300))
         selection.add('recoil_qcdcr', (u['qcdcr'].mag>250))
         selection.add('mindphi_qcdcr', (abs(u['qcdcr'].delta_phi(j_clean.T)).min()<0.1))
         selection.add('minDphi_qcdcr', (abs(u['qcdcr'].delta_phi(fj_clean.T)).min()>1.5))
